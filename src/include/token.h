@@ -10,7 +10,7 @@ typedef enum
     T_EOF,
     T_ERROR,
     T_ID,
-    T_EQUALS,
+    T_EQ,
     T_NOT_EQ,
     T_LTEQ,
     T_LT,

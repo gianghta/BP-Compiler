@@ -12,16 +12,15 @@ int main(int argc, char *argv[])
             "tmp := putString(\"T\");\n"
         "else"
             "tmp := putString(\"F\");\n"
-        "end if;"
-
-        "end program.\n"
+        "end if;\n"
+        "end program."
     );
 
     Token* token = lexer_get_next_token(lexer);
 
     while (token->type != T_EOF)
     {
-        printf("TOKEN(%d)\n", token->type);
+        print_token(token);
         token = lexer_get_next_token(lexer);
     }
     return 0;
