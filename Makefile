@@ -1,4 +1,4 @@
-exec = hello.out
+exec = bp.out
 sources = $(wildcard src/*.c)
 objects = $(sources:.c=.o)
 flags = -g

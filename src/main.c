@@ -1,11 +1,18 @@
+#include "include/bp.h"
 #include <stdio.h>
-#include "include/lexer.h"
 
 
 int main(int argc, char *argv[])
 {
-    Lexer* lexer = init_lexer(
-        "begin\n"
+    // Usage check for correct filename
+    // if (argc < 2)
+    // {
+    //     printf("usage: ./bp.out <file name>\n");
+    //     return 1;
+    // }
+
+    bp_compile(
+         "begin\n"
 
         "x := getBool();\n"
         "if(x) then\n"
@@ -16,12 +23,5 @@ int main(int argc, char *argv[])
         "end program."
     );
 
-    Token* token = lexer_get_next_token(lexer);
-
-    while (token->type != T_EOF)
-    {
-        print_token(token);
-        token = lexer_get_next_token(lexer);
-    }
     return 0;
 }

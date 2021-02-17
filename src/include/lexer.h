@@ -8,28 +8,28 @@ typedef struct LEXER_STRUCT
     unsigned int start;
     unsigned int current;
     char* source;
-} Lexer;
+} lexer_T;
 
-Lexer* init_lexer(char* contents);
+lexer_T* init_lexer(char* contents);
 
-void lexer_advance(Lexer* lexer);
+void lexer_advance(lexer_T* lexer);
 
 // Methods to handle blankspace and comments
-void lexer_skip_whitespace(Lexer* lexer);
-void lexer_skip_line_comment(Lexer* lexer);
-void lexer_skip_block_comment(Lexer* lexer);
+void lexer_skip_whitespace(lexer_T* lexer);
+void lexer_skip_line_comment(lexer_T* lexer);
+void lexer_skip_block_comment(lexer_T* lexer);
 
-Token* lexer_get_next_token(Lexer* lexer);
+Token* lexer_get_next_token(lexer_T* lexer);
 
-Token* lexer_collect_string(Lexer* lexer);
+Token* lexer_collect_string(lexer_T* lexer);
 
-Token* lexer_collect_id(Lexer* lexer);
+Token* lexer_collect_id(lexer_T* lexer);
 
-Token* lexer_collect_integer(Lexer* lexer);
+Token* lexer_collect_integer(lexer_T* lexer);
 
-Token* lexer_collect_float(Lexer** lexer, Token** token);
+Token* lexer_collect_float(lexer_T** lexer, Token** token);
 
-Token* lexer_collect_char(Lexer* lexer);
+Token* lexer_collect_char(lexer_T* lexer);
 
 void print_token(Token* token);
 

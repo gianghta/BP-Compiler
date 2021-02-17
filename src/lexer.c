@@ -5,9 +5,9 @@
 #include <ctype.h>
 
 
-Lexer* init_lexer(char* source)
+lexer_T* init_lexer(char* source)
 {
-    Lexer* lexer = calloc(1, sizeof(struct LEXER_STRUCT));
+    lexer_T* lexer = calloc(1, sizeof(struct LEXER_STRUCT));
     lexer->source = source;
     lexer->start = 0;
     lexer->current_char = source[lexer->start];
@@ -16,7 +16,7 @@ Lexer* init_lexer(char* source)
 }
 
 // Lexer main function to detect each type of tokens
-Token* lexer_get_next_token(Lexer* lexer)
+Token* lexer_get_next_token(lexer_T* lexer)
 {
     Token* token;
 
@@ -161,7 +161,7 @@ Token* lexer_get_next_token(Lexer* lexer)
     }
 }
 
-Token* lexer_collect_string(Lexer* lexer)
+Token* lexer_collect_string(lexer_T* lexer)
 {   
     // Eat the double quote character
     lexer_advance(lexer);
@@ -204,7 +204,7 @@ Token* lexer_collect_string(Lexer* lexer)
     return token;
 }
 
-Token* lexer_collect_char(Lexer* lexer)
+Token* lexer_collect_char(lexer_T* lexer)
 {
     lexer_advance(lexer);
 
@@ -234,7 +234,7 @@ Token* lexer_collect_char(Lexer* lexer)
     return token;
 }
 
-Token* lexer_collect_integer(Lexer* lexer)
+Token* lexer_collect_integer(lexer_T* lexer)
 {
     Token* token = init_token(T_NUMBER_INT);
     token->value.intVal = 0;
@@ -253,7 +253,7 @@ Token* lexer_collect_integer(Lexer* lexer)
     return token;
 }
 
-Token* lexer_collect_float(Lexer** lexer, Token** token)
+Token* lexer_collect_float(lexer_T** lexer, Token** token)
 {
     Token* new_token = *token;
     new_token->type = T_NUMBER_FLOAT;
@@ -271,7 +271,7 @@ Token* lexer_collect_float(Lexer** lexer, Token** token)
     return new_token;
 }
 
-Token* lexer_collect_id(Lexer* lexer)
+Token* lexer_collect_id(lexer_T* lexer)
 {   
     int i = 0;
     Token* token = init_token(T_ID);
@@ -291,7 +291,7 @@ Token* lexer_collect_id(Lexer* lexer)
     return token;
 }
 
-void lexer_advance(Lexer* lexer)
+void lexer_advance(lexer_T* lexer)
 {
     if (lexer->current_char != '\0' && lexer->start < strlen(lexer->source))
     {
@@ -300,7 +300,7 @@ void lexer_advance(Lexer* lexer)
     }
 }
 
-void lexer_skip_whitespace(Lexer* lexer)
+void lexer_skip_whitespace(lexer_T* lexer)
 {
     while (isspace(lexer->current_char) && lexer->current_char != -1)
     {
@@ -308,13 +308,13 @@ void lexer_skip_whitespace(Lexer* lexer)
     }
 }
 
-void lexer_skip_line_comment(Lexer* lexer)
+void lexer_skip_line_comment(lexer_T* lexer)
 {
     while (lexer->current_char != '\n' && lexer->current_char != EOF)
         lexer_advance(lexer);
 }
 
-void lexer_skip_block_comment(Lexer* lexer)
+void lexer_skip_block_comment(lexer_T* lexer)
 {
     int cnt = 1;
     while (cnt != 0 && lexer->current_char != EOF)
