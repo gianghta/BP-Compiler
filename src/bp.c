@@ -1,6 +1,7 @@
 #include "include/bp.h"
 #include "include/io.h"
 #include "include/lexer.h"
+#include <stdlib.h>
 
 
 void bp_compile(char* src)
@@ -13,4 +14,11 @@ void bp_compile(char* src)
         print_token(token);
         token = lexer_get_next_token(lexer);
     }
+}
+
+void bp_compile_file(const char* filename)
+{
+    char* src = bp_read_file(filename);
+    bp_compile(src);
+    free(src);
 }
