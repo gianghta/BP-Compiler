@@ -286,11 +286,9 @@ Token* lexer_collect_id(lexer_T* lexer)
         token->value.stringVal[i] = lexer->current_char;
         lexer_advance(lexer);
     }
-    token->value.stringVal[i] = '\0';
 
-    // to_lower_case_str(token->value.stringVal);
-    // printf("%s\n", token->value.stringVal);
-    // token->type = check_for_reserved_word(token->value.stringVal);
+    to_lower_case_str(token->value.stringVal);
+    token->type = check_for_reserved_word(token->value.stringVal);
     return token;
 }
 

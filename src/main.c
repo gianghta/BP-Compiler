@@ -13,13 +13,14 @@ int main(int argc, char *argv[])
 
     bp_compile(
         "begin\n"
-
-        "x := getBool();\n"
+        "c := 16.50\n"
+        "y := 2520;\n"
+        "x := false;\n"
         "if(x) then\n"
-            "tmp := putString(\"T\");\n"
-        "else"
-            "tmp := putString(\"F\");\n"
-        "end if;\n"
+            "tmp := \"Tasdczczxc\";\n"
+        "else\n"
+            "tmp := \"Fasdasdzxc\";\n"
+        "end if\n;"
         "end program."
     );
 

@@ -110,6 +110,52 @@ void print_token(Token* token)
             printf("T_GT\n"); break;
         case T_GTEQ:
             printf("T_GTEQ\n"); break;
+        case K_PROGRAM:
+            printf("K_PROGRAM\n"); break;
+        case K_IS:
+            printf("K_IS\n"); break;
+        case K_GLOBAL:
+            printf("K_GLOBAL\n"); break;
+        case K_INT:
+            printf("K_INT\n"); break;
+        case K_FLOAT:
+            printf("K_FLOAT\n"); break;
+        case K_STRING:
+            printf("K_STRING\n"); break;
+        case K_BOOL:
+            printf("K_BOOL\n"); break;
+        case K_CHAR:
+            printf("K_CHAR\n"); break;
+        case K_PROCEDURE:
+            printf("K_PROCEDURE\n"); break;
+        case K_IN:
+            printf("K_IN\n"); break;
+        case K_OUT:
+            printf("K_OUT\n"); break;
+        case K_INOUT:
+            printf("K_INOUT\n"); break;
+        case K_RETURN:
+            printf("K_RETURN\n"); break;
+        case K_NOT:
+            printf("K_NOT\n"); break;
+        case K_BEGIN:
+            printf("K_BEGIN\n"); break;
+        case K_END:
+            printf("K_END\n"); break;
+        case K_IF:
+            printf("K_IF\n"); break;
+        case K_ELSE:
+            printf("K_ELSE\n"); break;
+        case K_THEN:
+            printf("K_THEN\n"); break;
+        case K_TRUE:
+            printf("K_THEN\n"); break;
+        case K_FALSE:
+            printf("K_FALSE\n"); break;
+        case K_WHILE:
+            printf("K_WHILE\n"); break;
+        case K_FOR:
+            printf("K_FOR\n"); break;
         default:
             printf("T_UNKNOWN\n"); break;
     }
