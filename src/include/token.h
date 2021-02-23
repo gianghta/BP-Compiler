@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #define MAX_STRING_LENGTH 50
+#define MAX_KEYWORD_LENGTH 50
 
 typedef enum
 {
@@ -31,7 +32,30 @@ typedef enum
     T_PLUS,
     T_MINUS,
     T_MULTIPLY,
-    T_DIVIDE
+    T_DIVIDE,
+    K_PROGRAM,
+    K_IS,
+    K_GLOBAL,
+    K_INT,
+    K_FLOAT,
+    K_STRING,
+    K_BOOL,
+    K_CHAR,
+    K_PROCEDURE,
+    K_IN,
+    K_OUT,
+    K_INOUT,
+    K_RETURN,
+    K_NOT,
+    K_BEGIN,
+    K_END,
+    K_IF,
+    K_ELSE,
+    K_THEN,
+    K_TRUE,
+    K_FALSE,
+    K_WHILE,
+    K_FOR,
 } token_type;
 
 typedef struct
@@ -48,4 +72,7 @@ typedef struct
 } Token;
 
 Token* init_token(token_type type);
+token_type check_for_reserved_word(char* str);
+void to_lower_case_str(char *p);
+void print_token(Token* token);
 #endif

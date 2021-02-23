@@ -1,6 +1,7 @@
 #include "include/bp.h"
 #include "include/io.h"
 #include "include/lexer.h"
+#include "include/token.h"
 #include <stdlib.h>
 
 

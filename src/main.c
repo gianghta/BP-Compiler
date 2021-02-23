@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     // }
 
     bp_compile(
-         "begin\n"
+        "begin\n"
 
         "x := getBool();\n"
         "if(x) then\n"
