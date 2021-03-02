@@ -17,9 +17,6 @@ struct {
     {"bool", K_BOOL},
     {"char", K_CHAR},
     {"procedure", K_PROCEDURE},
-    {"in", K_IN},
-    {"out", K_OUT},
-    {"inout", K_INOUT},
     {"return", K_RETURN},
     {"not", K_NOT},
     {"begin", K_BEGIN},
@@ -30,7 +27,8 @@ struct {
     {"true", K_TRUE},
     {"false", K_FALSE},
     {"while", K_WHILE},
-    {"for", K_FOR}
+    {"for", K_FOR},
+    {"enum", K_ENUM}
 };
 
 Token* init_token(token_type type)
@@ -128,12 +126,6 @@ void print_token(Token* token)
             printf("K_CHAR\n"); break;
         case K_PROCEDURE:
             printf("K_PROCEDURE\n"); break;
-        case K_IN:
-            printf("K_IN\n"); break;
-        case K_OUT:
-            printf("K_OUT\n"); break;
-        case K_INOUT:
-            printf("K_INOUT\n"); break;
         case K_RETURN:
             printf("K_RETURN\n"); break;
         case K_NOT:
@@ -156,6 +148,8 @@ void print_token(Token* token)
             printf("K_WHILE\n"); break;
         case K_FOR:
             printf("K_FOR\n"); break;
+        case K_ENUM:
+            printf("K_ENUM\n"); break;
         default:
             printf("T_UNKNOWN\n"); break;
     }

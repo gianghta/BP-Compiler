@@ -42,9 +42,6 @@ typedef enum
     K_BOOL,
     K_CHAR,
     K_PROCEDURE,
-    K_IN,
-    K_OUT,
-    K_INOUT,
     K_RETURN,
     K_NOT,
     K_BEGIN,
@@ -56,6 +53,7 @@ typedef enum
     K_FALSE,
     K_WHILE,
     K_FOR,
+    K_ENUM
 } token_type;
 
 typedef struct
