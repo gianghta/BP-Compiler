@@ -57,100 +57,101 @@ token_type check_for_reserved_word(char* str)
     return T_ID;
 }
 
-void print_token(Token* token)
+char* print_token(Token* token)
 {
     switch(token->type) {
+        case T_UNKNOWN: return "";
         case T_EOF:
-            printf("T_END_OF_FILE\n"); break;
+            printf("T_END_OF_FILE\n"); return "";
         case T_ASSIGNMENT:
-            printf("T_ASSIGNMENT\n"); break;
+            printf("T_ASSIGNMENT\n"); return "";
         case T_NUMBER_FLOAT:
-            printf("T_NUMBER_FLOAT, %f\n", token->value.floatVal); break;
+            printf("T_NUMBER_FLOAT, %f\n", token->value.floatVal); return "FLOAT";
         case T_NUMBER_INT:
-            printf("T_NUMBER_INT, %d\n", token->value.intVal); break;
+            printf("T_NUMBER_INT, %d\n", token->value.intVal); return "INTEGER";
         case T_PLUS:
-            printf("T_PLUS\n"); break;
+            printf("T_PLUS\n"); return "+";
         case T_MULTIPLY:
-            printf("T_MULTIPLY\n"); break;
+            printf("T_MULTIPLY\n"); return "*";
         case T_DIVIDE:
-            printf("T_DIVIDE\n"); break;
+            printf("T_DIVIDE\n"); return "/";
         case T_MINUS:
-            printf("T_MINUS\n"); break;
+            printf("T_MINUS\n"); return "-";
         case T_CHAR:
-            printf("T_CHAR, '%c'\n", token->value.charVal); break;
+            printf("T_CHAR, '%c'\n", token->value.charVal); return "CHAR";
         case T_STRING:
-            printf("T_STRING, \"%s\"\n", token->value.stringVal); break;
+            printf("T_STRING, \"%s\"\n", token->value.stringVal); return "STRING";
         case T_ID:
-            printf("T_IDENTIFIER, %s\n", token->value.stringVal); break;
+            printf("T_IDENTIFIER, %s\n", token->value.stringVal); return "IDENTIFIER";
         case T_COLON:
-            printf("T_COLON\n"); break;
+            printf("T_COLON\n"); return ":";
         case T_SEMI_COLON:
-            printf("T_SEMI_COLON\n"); break;
+            printf("T_SEMI_COLON\n"); return ";";
         case T_COMMA:
-            printf("T_COMMA\n"); break;
+            printf("T_COMMA\n"); return ",";
         case T_LPAREN:
-            printf("T_LPAREN\n"); break;
+            printf("T_LPAREN\n"); return "(";
         case T_RPAREN:
-            printf("T_RPAREN\n"); break;
+            printf("T_RPAREN\n"); return ")";
         case T_LBRACKET:
-            printf("T_LBRACKET\n"); break;
+            printf("T_LBRACKET\n"); return "{";
         case T_RBRACKET:
-            printf("T_RBRACKET\n"); break;
+            printf("T_RBRACKET\n"); return "}";
         case T_EQ:
-            printf("T_EQ\n"); break;
+            printf("T_EQ\n"); return "=";
         case T_NOT_EQ:
-            printf("T_NOT_EQ\n"); break;
+            printf("T_NOT_EQ\n"); return "!=";
         case T_LT:
-            printf("T_LT\n"); break;
+            printf("T_LT\n"); return "<";
         case T_LTEQ:
-            printf("T_LTEQ\n"); break;
+            printf("T_LTEQ\n"); return "<=";
         case T_GT:
-            printf("T_GT\n"); break;
+            printf("T_GT\n"); return ">";
         case T_GTEQ:
-            printf("T_GTEQ\n"); break;
+            printf("T_GTEQ\n"); return ">=";
         case K_PROGRAM:
-            printf("K_PROGRAM\n"); break;
+            printf("K_PROGRAM\n"); return "keyword PROGRAM";
         case K_IS:
-            printf("K_IS\n"); break;
+            printf("K_IS\n"); return "keyword IS";
         case K_GLOBAL:
-            printf("K_GLOBAL\n"); break;
+            printf("K_GLOBAL\n"); return "keyword GLOBAL";
         case K_INT:
-            printf("K_INT\n"); break;
+            printf("K_INT\n"); return "keyword INTEGER";
         case K_FLOAT:
-            printf("K_FLOAT\n"); break;
+            printf("K_FLOAT\n"); return "keyword FLOAT";
         case K_STRING:
-            printf("K_STRING\n"); break;
+            printf("K_STRING\n"); return "keyword STRING";
         case K_BOOL:
-            printf("K_BOOL\n"); break;
+            printf("K_BOOL\n"); return "keyword BOOL";
         case K_CHAR:
-            printf("K_CHAR\n"); break;
+            printf("K_CHAR\n"); return "keyword CHAR";
         case K_PROCEDURE:
-            printf("K_PROCEDURE\n"); break;
+            printf("K_PROCEDURE\n"); return "keyword PROCEDURE";
         case K_RETURN:
-            printf("K_RETURN\n"); break;
+            printf("K_RETURN\n"); return "keyword RETURN";
         case K_NOT:
-            printf("K_NOT\n"); break;
+            printf("K_NOT\n"); return "keyword NOT";
         case K_BEGIN:
-            printf("K_BEGIN\n"); break;
+            printf("K_BEGIN\n"); return "keyword BEGIN";
         case K_END:
-            printf("K_END\n"); break;
+            printf("K_END\n"); return "keyword END";
         case K_IF:
-            printf("K_IF\n"); break;
+            printf("K_IF\n"); return "keyword IF";
         case K_ELSE:
-            printf("K_ELSE\n"); break;
+            printf("K_ELSE\n"); return "keyword ELSE";
         case K_THEN:
-            printf("K_THEN\n"); break;
+            printf("K_THEN\n"); return "keyword THEN";
         case K_TRUE:
-            printf("K_THEN\n"); break;
+            printf("K_THEN\n"); return "keyword TRUE";
         case K_FALSE:
-            printf("K_FALSE\n"); break;
+            printf("K_FALSE\n"); return "keyword FALSE";
         case K_WHILE:
-            printf("K_WHILE\n"); break;
+            printf("K_WHILE\n"); return "keyword WHILE";
         case K_FOR:
-            printf("K_FOR\n"); break;
+            printf("K_FOR\n"); return "keyword FOR";
         case K_ENUM:
-            printf("K_ENUM\n"); break;
+            printf("K_ENUM\n"); return "keyword ENUM";
         default:
-            printf("T_UNKNOWN\n"); break;
+            return "";
     }
 }

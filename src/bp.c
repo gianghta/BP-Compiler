@@ -3,6 +3,7 @@
 #include "include/lexer.h"
 #include "include/token.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 
 void bp_compile(char* src)
@@ -12,7 +13,8 @@ void bp_compile(char* src)
 
     while (token->type != T_EOF)
     {
-        print_token(token);
+        char* str = print_token(token);
+        printf("%s\n", str);
         token = lexer_get_next_token(lexer);
     }
 }

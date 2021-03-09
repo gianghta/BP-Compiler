@@ -72,5 +72,5 @@ typedef struct
 Token* init_token(token_type type);
 token_type check_for_reserved_word(char* str);
 void to_lower_case_str(char *p);
-void print_token(Token* token);
+char* print_token(Token* token);
 #endif
