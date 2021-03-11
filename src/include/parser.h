@@ -21,7 +21,6 @@ void parse_proc_declaration(parser_T* parser);
 void parse_var_declaration(parser_T* parser);
 void parse_type_mark(parser_T* parser);
 void parse_statements(parser_T* parser);
-void parse_statement_chain(parser_T* parser);
 void parse_statement(parser_T* parser);
 void parse_param(parser_T* parser);
 void parse_param_list(parser_T* parser);

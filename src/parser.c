@@ -106,7 +106,14 @@ void parse_proc_declaration(parser_T* parser)
     {
         parse_param_list(parser);
     }
-    parser_eat(parser, T_LPAREN);
+    parser_eat(parser, T_RPAREN);
+
+    // procedure body
+    if (parser->look_ahead->type != K_BEGIN)
+    {
+        parse_declarations(parser);
+    }
+    parser_eat(parser, K_BEGIN);
 
     if (parser->look_ahead->type != K_END)
     {
@@ -118,11 +125,74 @@ void parse_proc_declaration(parser_T* parser)
     printf("Finished parsing procedure\n");
 }
 
-void parse_var_declaration(parser_T* parser);
-void parse_type_mark(parser_T* parser);
-void parse_statements(parser_T* parser);
-void parse_statement_chain(parser_T* parser);
-void parse_statement(parser_T* parser);
+void parse_var_declaration(parser_T* parser)
+{
+    printf("Parsing variable.\n");
+    parser_eat(parser, K_VARIABLE);
+    parser_eat(parser, T_ID);
+    parse_type_mark(parser);
+
+    // parsing array variable
+    if (parser->look_ahead->type == T_LBRACKET)
+    {
+        parser_eat(parser, T_LBRACKET);
+        parser_eat(parser, T_NUMBER_INT);
+        parser_eat(parser, T_RBRACKET);
+    }
+    printf("Finished parsing variable\n");
+}
+
+void parse_type_mark(parser_T* parser)
+{
+    printf("Parsing type mark\n");
+    switch (parser->look_ahead->type)
+    {
+    case K_INT:
+        parser_eat(parser, K_INT); break;
+    case K_FLOAT:
+        parser_eat(parser, K_FLOAT); break;
+    case K_BOOL:
+        parser_eat(parser, K_BOOL); break;
+    case K_CHAR:
+        parser_eat(parser, K_CHAR); break;
+    case K_STRING:
+        parser_eat(parser, K_STRING); break;
+    default:
+        printf("Error. Invalid type\n");
+        break;
+    }
+    printf("Finished parsing type mark.\n");
+}
+
+void parse_statements(parser_T* parser)
+{
+    parse_statement(parser);
+    while(parser->look_ahead->type == T_SEMI_COLON)
+    {
+        parser_eat(parser, T_SEMI_COLON);
+        parse_statement(parser);
+    }
+}
+
+void parse_statement(parser_T* parser)
+{
+    printf("Parsing statement.");
+    switch (parser->look_ahead->type)
+    {
+    case K_IF: parse_if_statement(parser); break;
+    case K_FOR: parse_loop_statement(parser); break;
+    case K_RETURN: parse_return_statement(parser); break;
+    case T_ID:
+        parse_assignment_statement(parser);
+        if (parser->look_ahead->type == T_LPAREN) parse_procedure_call(parser);
+        break;
+    default:
+        printf("Error. Invalid statements.\n");
+        break;
+    }
+    printf("Finish parsing statement.\n");
+}
+
 void parse_param(parser_T* parser);
 void parse_param_list(parser_T* parser);
 void parse_param_list_param(parser_T* parser);
