@@ -36,6 +36,7 @@ typedef enum
     K_PROGRAM,
     K_IS,
     K_GLOBAL,
+    K_VARIABLE,
     K_INT,
     K_FLOAT,
     K_STRING,
@@ -52,8 +53,7 @@ typedef enum
     K_TRUE,
     K_FALSE,
     K_WHILE,
-    K_FOR,
-    K_ENUM
+    K_FOR
 } token_type;
 
 typedef struct

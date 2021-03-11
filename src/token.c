@@ -11,6 +11,7 @@ struct {
     {"program", K_PROGRAM},
     {"is", K_IS},
     {"global", K_GLOBAL},
+    {"variable", K_VARIABLE},
     {"integer", K_INT},
     {"float", K_FLOAT},
     {"string", K_STRING},
@@ -28,7 +29,6 @@ struct {
     {"false", K_FALSE},
     {"while", K_WHILE},
     {"for", K_FOR},
-    {"enum", K_ENUM}
 };
 
 Token* init_token(token_type type)
@@ -149,8 +149,6 @@ char* print_token(Token* token)
             printf("K_WHILE\n"); return "keyword WHILE";
         case K_FOR:
             printf("K_FOR\n"); return "keyword FOR";
-        case K_ENUM:
-            printf("K_ENUM\n"); return "keyword ENUM";
         default:
             return "";
     }
