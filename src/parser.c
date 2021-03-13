@@ -196,8 +196,35 @@ void parse_statement(parser_T* parser)
 void parse_param(parser_T* parser);
 void parse_param_list(parser_T* parser);
 void parse_param_list_param(parser_T* parser);
-void parse_assignment_statement(parser_T* parser);
-void parse_if_statement(parser_T* parser);
+
+void parse_assignment_statement(parser_T* parser)
+{
+    printf("Parsing assignment statement.\n");
+    parse_destination(parser);
+    parser_eat(parser, T_ASSIGNMENT);
+    parse_expression(parser);
+    printf("Finished parsing assignment statement.\n");
+}
+
+void parse_if_statement(parser_T* parser)
+{
+    printf("Parsing if statement.\n");
+    parser_eat(parser, K_IF);
+    parser_eat(parser, T_LPAREN);
+    parse_expression(parser);
+    parser_eat(parser, T_RPAREN);
+    parser_eat(parser, K_THEN);
+    parse_statements(parser);
+    if (parser->look_ahead->type == K_ELSE)
+    {
+        parser_eat(parser, K_ELSE);
+        parse_statements(parser);
+    }
+    parser_eat(parser, K_END);
+    parser_eat(parser, K_IF);
+    printf("Finished parsing if statement\n");
+}
+
 void parse_loop_statement(parser_T* parser);
 void parse_return_statement(parser_T* parser);
 void parse_procedure_call(parser_T* parser);
