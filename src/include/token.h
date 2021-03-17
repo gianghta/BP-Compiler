@@ -18,6 +18,8 @@ typedef enum
     T_GTEQ,
     T_GT,
     T_STRING,
+    T_AND,
+    T_OR,
     T_CHAR,
     T_NUMBER_INT,
     T_NUMBER_FLOAT,

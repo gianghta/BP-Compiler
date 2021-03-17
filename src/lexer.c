@@ -52,9 +52,6 @@ Token* lexer_get_next_token(lexer_T* lexer)
         
         case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '9':
             return lexer_collect_integer(lexer);
-
-        case '\'':
-            return lexer_collect_char(lexer);
         case '"':
             return lexer_collect_string(lexer);
         case ':':
@@ -201,36 +198,6 @@ Token* lexer_collect_string(lexer_T* lexer)
         token->type = T_UNKNOWN;
     }
 
-    return token;
-}
-
-Token* lexer_collect_char(lexer_T* lexer)
-{
-    lexer_advance(lexer);
-
-    Token* token = init_token(T_CHAR);
-    lexer_advance(lexer);
-
-    if (lexer->current_char != EOF &&
-    (isalnum(lexer->current_char) ||
-    isspace(lexer->current_char) ||
-    lexer->current_char == '_' ||
-    lexer->current_char == ';' ||
-    lexer->current_char == ':' ||
-    lexer->current_char == '.' ||
-    lexer->current_char == '\"'))
-    {
-        token->value.charVal = lexer->current_char;
-        lexer_advance(lexer);
-    }
-
-    if (lexer->current_char == '\'')
-        lexer_advance(lexer);
-    else
-    {
-        token->type = T_UNKNOWN;
-        printf("Invalid character token!\n");
-    }
     return token;
 }
 

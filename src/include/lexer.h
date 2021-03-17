@@ -29,6 +29,4 @@ Token* lexer_collect_integer(lexer_T* lexer);
 
 Token* lexer_collect_float(lexer_T** lexer, Token** token);
 
-Token* lexer_collect_char(lexer_T* lexer);
-
 #endif
