@@ -4,6 +4,10 @@
 #include <ctype.h>
 #include <stdio.h>
 
+/*
+ * Table for mapping reserved word
+ * into Token Type
+ */
 struct {
     char keyword[MAX_STRING_LENGTH];
     token_type type;
@@ -31,6 +35,9 @@ struct {
     {"for", K_FOR},
 };
 
+/*
+ * Token constructor
+ */
 Token* init_token(token_type type)
 {
     Token* token = calloc(1, sizeof(Token));
@@ -39,10 +46,16 @@ Token* init_token(token_type type)
     return token;
 }
 
+/*
+ * Convert all input into lowercase
+ */
 void to_lower_case_str(char *p) {
     for ( ; *p; ++p) *p = tolower(*p);
 }
 
+/*
+ * Check for reserved word from table
+ */
 token_type check_for_reserved_word(char* str)
 {
     int len = sizeof(reserved_words)/sizeof(reserved_words[0]);
@@ -57,98 +70,119 @@ token_type check_for_reserved_word(char* str)
     return T_ID;
 }
 
+/*
+ * Helper function that returns a formatted string
+ */
+char* concatf(const char* fmt, ...)
+{
+    va_list args;
+    char* buf = NULL;
+    va_start(args, fmt);
+    int n = vasprintf(&buf, fmt, args);
+    va_end(args);
+    if (n < 0)
+    {
+        free(buf);
+        buf = NULL;
+    }
+    return buf;
+}
+
+/*
+ * String representation of token
+ */
 char* print_token(Token* token)
 {
     switch(token->type) {
         case T_UNKNOWN: return "";
         case T_EOF:
-            printf("T_END_OF_FILE\n"); return "";
+            return concatf("T_END_OF_FILE\n");
         case T_ASSIGNMENT:
-            printf("T_ASSIGNMENT\n"); return "";
+            return concatf("T_ASSIGNMENT\n");
         case T_NUMBER_FLOAT:
-            printf("T_NUMBER_FLOAT, %f\n", token->value.floatVal); return "FLOAT";
+            return concatf("T_NUMBER_FLOAT: %f\n", token->value.floatVal);
         case T_NUMBER_INT:
-            printf("T_NUMBER_INT, %d\n", token->value.intVal); return "INTEGER";
+            return concatf("T_NUMBER_INT: %d\n", token->value.intVal);
         case T_PLUS:
-            printf("T_PLUS\n"); return "+";
+            return concatf("T_PLUS: %s\n", "+");
         case T_MULTIPLY:
-            printf("T_MULTIPLY\n"); return "*";
+            return concatf("T_MULTIPLY: %s\n", "*");
         case T_DIVIDE:
-            printf("T_DIVIDE\n"); return "/";
+            return concatf("T_DIVIDE: %s\n", "/");
         case T_MINUS:
-            printf("T_MINUS\n"); return "-";
+            return concatf("T_MINUS: %s\n", "-");
         case T_CHAR:
-            printf("T_CHAR, '%c'\n", token->value.charVal); return "CHAR";
+            return concatf("T_CHAR: '%c'\n", token->value.charVal);
         case T_STRING:
-            printf("T_STRING, \"%s\"\n", token->value.stringVal); return "STRING";
+            return concatf("T_STRING: \"%s\"\n", token->value.stringVal);
         case T_ID:
-            printf("T_IDENTIFIER, %s\n", token->value.stringVal); return "IDENTIFIER";
+            return concatf("T_IDENTIFIER: %s\n", token->value.stringVal);
         case T_COLON:
-            printf("T_COLON\n"); return ":";
+            return concatf("T_COLON: %s\n", ":");
         case T_SEMI_COLON:
-            printf("T_SEMI_COLON\n"); return ";";
+            return concatf("T_SEMI_COLON: %s\n", ";");
         case T_COMMA:
-            printf("T_COMMA\n"); return ",";
+            return concatf("T_COMMA: %s\n", ",");
         case T_LPAREN:
-            printf("T_LPAREN\n"); return "(";
+            return concatf("T_LPAREN: %s\n", "(");
         case T_RPAREN:
-            printf("T_RPAREN\n"); return ")";
+            return concatf("T_RPAREN: %s\n", ")");
         case T_LBRACKET:
-            printf("T_LBRACKET\n"); return "{";
+            return concatf("T_LBRACKET: %s\n", "{");
         case T_RBRACKET:
-            printf("T_RBRACKET\n"); return "}";
+            return concatf("T_RBRACKET: %s\n", "}");
         case T_EQ:
-            printf("T_EQ\n"); return "=";
+            return concatf("T_EQ: %s\n", "=");
         case T_NOT_EQ:
-            printf("T_NOT_EQ\n"); return "!=";
+            return concatf("T_NOT_EQ: %s\n", "!=");
         case T_LT:
-            printf("T_LT\n"); return "<";
+            return concatf("T_LT: %s\n", "<");
         case T_LTEQ:
-            printf("T_LTEQ\n"); return "<=";
+            return concatf("T_LTEQ: %s\n", "<=");
         case T_GT:
-            printf("T_GT\n"); return ">";
+            return concatf("T_GT: %s\n", ">");
         case T_GTEQ:
-            printf("T_GTEQ\n"); return ">=";
+            return concatf("T_GTEQ: %s\n", ">=");
         case K_PROGRAM:
-            printf("K_PROGRAM\n"); return "keyword PROGRAM";
+            return concatf("K_PROGRAM: %s\n", "program");
         case K_IS:
-            printf("K_IS\n"); return "keyword IS";
+            return concatf("K_IS: %s\n", "is");
         case K_GLOBAL:
-            printf("K_GLOBAL\n"); return "keyword GLOBAL";
+            return concatf("K_GLOBAL: %s\n", "global");
         case K_INT:
-            printf("K_INT\n"); return "keyword INTEGER";
+            return concatf("K_INT: %s\n", "integer");
         case K_FLOAT:
-            printf("K_FLOAT\n"); return "keyword FLOAT";
+            return concatf("K_FLOAT: %s\n", "float");
         case K_STRING:
-            printf("K_STRING\n"); return "keyword STRING";
+            return concatf("K_STRING: %s\n", "string");
         case K_BOOL:
-            printf("K_BOOL\n"); return "keyword BOOL";
+            return concatf("K_BOOL: %s\n", "bool");
         case K_CHAR:
-            printf("K_CHAR\n"); return "keyword CHAR";
+            return concatf("K_CHAR: %s\n", "char");
         case K_PROCEDURE:
-            printf("K_PROCEDURE\n"); return "keyword PROCEDURE";
+            return concatf("K_PROCEDURE: %s\n", "procedure");
         case K_RETURN:
-            printf("K_RETURN\n"); return "keyword RETURN";
+            return concatf("K_RETURN: %s\n", "return");
         case K_NOT:
-            printf("K_NOT\n"); return "keyword NOT";
+            return concatf("K_NOT: %s\n", "not");
         case K_BEGIN:
-            printf("K_BEGIN\n"); return "keyword BEGIN";
+            return concatf("K_BEGIN: %s\n", "begin");
         case K_END:
-            printf("K_END\n"); return "keyword END";
+            return concatf("K_END: %s\n", "end");
         case K_IF:
-            printf("K_IF\n"); return "keyword IF";
+            return concatf("K_IF: %s\n", "if");
         case K_ELSE:
-            printf("K_ELSE\n"); return "keyword ELSE";
+            return concatf("K_ELSE: %s\n", "else");
         case K_THEN:
-            printf("K_THEN\n"); return "keyword THEN";
+            return concatf("K_THEN: %s\n", "then");
         case K_TRUE:
-            printf("K_THEN\n"); return "keyword TRUE";
+            return concatf("K_TRUE: %s\n", "true");
         case K_FALSE:
-            printf("K_FALSE\n"); return "keyword FALSE";
+            return concatf("K_FALSE: %s\n", "false");
         case K_WHILE:
-            printf("K_WHILE\n"); return "keyword WHILE";
+            return concatf("K_WHILE: %s\n", "while");
         case K_FOR:
-            printf("K_FOR\n"); return "keyword FOR";
+            return concatf("K_FOR: %s\n", "for");
         default:
             return "";
     }

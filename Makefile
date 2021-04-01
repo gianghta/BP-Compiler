@@ -1,19 +1,21 @@
-exec = bp.out
-sources = $(wildcard src/*.c)
-objects = $(sources:.c=.o)
-flags = -g
+CC = clang
+CFLAGS = -g -Wall -I$(INCLUDE)
+SRC = src
+OBJ = obj
+INCLUDE = src/include
+SRCS = $(wildcard $(SRC)/*.c)
+OBJS = $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 
-$(exec): $(objects)
-	gcc $(objects) $(flags) -o $(exec)
+BINDIR = bin
+BIN = $(BINDIR)/bp.out
 
-%.o: %.c include/%.h
-	gcc -c $(flags) $< -o $@
-	
-install:
-	make
-	cp. /hello.out /usr/local/bin/hello
+all:$(BIN)
+
+$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@
+
+$(OBJ)/%.o: $(SRC)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	-rm *.out
-	-rm *.o
-	-rm src/*.o
+	rm -r $(BINDIR)/* $(OBJ)/*

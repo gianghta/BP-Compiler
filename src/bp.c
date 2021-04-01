@@ -14,9 +14,12 @@ void bp_compile(char* src)
     while (token->type != T_EOF)
     {
         char* str = print_token(token);
-        printf("%s\n", str);
+        printf("%s", str);
         token = lexer_get_next_token(lexer);
     }
+    
+    char* str = print_token(token);
+    printf("%s\n", str);
 }
 
 void bp_compile_file(const char* filename)

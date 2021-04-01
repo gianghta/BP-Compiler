@@ -243,7 +243,7 @@ Token* lexer_collect_id(lexer_T* lexer)
     int i = 0;
     Token* token = init_token(T_ID);
 
-    for (int i = 0; isalnum(lexer->current_char) || lexer->current_char == '_'; i++)
+    for (i = 0; isalnum(lexer->current_char) || lexer->current_char == '_'; i++)
     {
         if (i == MAX_STRING_LENGTH)
         {
