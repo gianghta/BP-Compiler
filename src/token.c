@@ -183,6 +183,8 @@ char* print_token(Token* token)
             return concatf("K_WHILE: %s\n", "while");
         case K_FOR:
             return concatf("K_FOR: %s\n", "for");
+        case K_VARIABLE:
+            return concatf("K_VARIABLE: %s\n", "variable");
         default:
             return "";
     }

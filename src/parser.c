@@ -19,20 +19,23 @@ bool parser_eat(parser_T* parser, token_type type)
 {
     Token* tmp = init_token(type);
     printf("Matching token. Expected type: ");
-    printf("%s\n", print_token(tmp));
+    printf("%s", print_token(tmp));
 
     if (!is_token_type(parser, type))
     {
-        printf("Token doesn't match. Current look ahead is: %s\n", print_token(parser->look_ahead));
+        printf("Token doesn't match. Current look ahead is: %s", print_token(parser->look_ahead));
         return false;
     }
     else
     {
-        printf("Token matched. Current look ahead is: %s\n", print_token(parser->look_ahead));
+        printf("Token matched. Current look ahead is: %s", print_token(parser->look_ahead));
         parser->current_token = parser->look_ahead;
         parser->look_ahead = lexer_get_next_token(parser->lexer);
+        printf("Current token: %sLook ahead is: %s\n", print_token(parser->current_token), print_token(parser->look_ahead));
         return true;
     }
+
+    free(tmp);
 }
 
 /*
@@ -50,6 +53,7 @@ bool is_token_type(parser_T* parser, token_type type)
     }
 }
 
+// Holy entry point
 bool parse(parser_T* parser)
 {
     return program(parser);
@@ -298,6 +302,11 @@ bool variable_declaration(parser_T* parser)
         return false;
     }
 
+    if (!parser_eat(parser, T_COLON))
+    {
+        return false;
+    }
+
     if (!type_mark(parser))
     {
         return false;
@@ -327,7 +336,7 @@ bool variable_declaration(parser_T* parser)
  *      integer | float | string | bool
  */
 bool type_mark(parser_T* parser)
-{
+{   
     switch (parser->look_ahead->type)
     {
         case K_INT:
@@ -506,7 +515,7 @@ bool if_statement(parser_T* parser)
  *          ( <statement> ; )*
  *      end for
  */
-bool loop_statement(parser)
+bool loop_statement(parser_T* parser)
 {
     if (!parser_eat(parser, K_FOR))
     {
@@ -559,7 +568,7 @@ bool loop_statement(parser)
 /*
  * <return_statement> ::= return <expression>
  */
-bool return_statement(parser)
+bool return_statement(parser_T* parser)
 {
     if (!parser_eat(parser, K_RETURN))
     {
@@ -577,7 +586,7 @@ bool return_statement(parser)
 /*
  * <identifier> ::= [a-zA-Z][a-zA-Z0-9_]*
  */ 
-bool identifier(parser)
+bool identifier(parser_T* parser)
 {
     return parser_eat(parser, T_ID);
 }
@@ -585,7 +594,7 @@ bool identifier(parser)
 /*
  * <expression> ::= [ not ] <arith_op> <expression_prime>
  */
-bool expression(parser)
+bool expression(parser_T* parser)
 {
     // Optional NOT
     if (is_token_type(parser, K_NOT))
@@ -620,7 +629,7 @@ bool expression_prime(parser_T* parser)
             parser_eat(parser, T_AND);
             break;
         case T_OR:
-            parser_eat(parser_eat, T_OR);
+            parser_eat(parser, T_OR);
             break;
         // null case
         default:
@@ -640,9 +649,363 @@ bool expression_prime(parser_T* parser)
     return true;
 }
 
+/*
+ * <arith_op> ::= <relation> <arith_op_prime>
+ */
+bool arith_op(parser_T* parser)
+{
+    if (!relation(parser))
+    {
+        return false;
+    }
 
+    if (!arith_op_prime(parser))
+    {
+        return false;
+    }
+    return true;
+}
 
+/*
+ * <arith_op_prime> ::=
+ *      + <relation> <arith_op_prime>
+ *    | - <relation> <arith_op_prime>
+ *    | null
+ */
+bool arith_op_prime(parser_T* parser)
+{
+    switch (parser->look_ahead->type)
+    {
+        case T_PLUS:
+            parser_eat(parser, T_PLUS);
+            break;
+        case T_MINUS:
+            parser_eat(parser, T_MINUS);
+            break;
+        default:
+            return true;
+    }
 
+    if (!relation(parser))
+    {
+        return false;
+    }
+
+    if (!arith_op_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <relation> ::= <term> <relation_prime>
+ */
+bool relation(parser_T* parser)
+{
+    if (!term(parser))
+    {
+        return false;
+    }
+
+    if (!relation_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <relation_prime> ::=
+ *          <   <term> <relation_prime>
+ *        | >=  <term> <relation_prime>
+ *        | >   <term> <relation_prime>
+ *        | <=  <term> <relation_prime>
+ *        | ==  <term> <relation_prime>
+ *        | !=  <term> <relation_prime>
+ *        | null
+ */
+bool relation_prime(parser_T* parser)
+{
+    switch (parser->look_ahead->type)
+    {
+        case T_LT:
+            parser_eat(parser, T_LT);
+            break;
+        case T_LTEQ:
+            parser_eat(parser, T_LTEQ);
+            break;
+        case T_GT:
+            parser_eat(parser, T_GT);
+            break;
+        case T_GTEQ:
+            parser_eat(parser, T_GTEQ);
+            break;
+        case T_EQ:
+            parser_eat(parser, T_EQ);
+            break;
+        case T_NOT_EQ:
+            parser_eat(parser, T_NOT_EQ);
+            break;
+        default:
+            return true;
+    }
+
+    if (!term(parser))
+    {
+        return false;
+    }
+
+    if (!relation_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <term> ::= <factor> <term_prime>
+ */
+bool term(parser_T* parser)
+{
+    if (!factor(parser))
+    {
+        return false;
+    }
+
+    if (!term_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <term_prime> ::=
+ *       *  <factor> <term_prime>
+ *     | /  <factor> <term_prime>
+ *     | null
+ */
+bool term_prime(parser_T* parser)
+{
+    switch (parser->look_ahead->type)
+    {
+        case T_MULTIPLY:
+            parser_eat(parser, T_MULTIPLY);
+            break;
+        case T_DIVIDE:
+            parser_eat(parser, T_DIVIDE);
+            break;
+        default:
+            return true;
+    }
+
+    if (!factor(parser))
+    {
+        return false;
+    }
+
+    if (!term_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <factor> ::=
+ *      ( <expression> )
+ *    | <procedure_call>
+ *    | [ - ] <name>
+ *    | [ - ] <number>
+ *    | <string>
+ *    | true
+ *    | false
+ */
+bool factor(parser_T* parser)
+{
+    if (parser_eat(parser, T_LPAREN))
+    {
+        if (!expression(parser))
+        {
+            return false;
+        }
+
+        if (!parser_eat(parser, T_RPAREN))
+        {
+            return false;
+        }
+        return true;
+    }
+    else if (procedure_call_or_name_handler(parser))
+    {
+        return true;
+    }
+    else if (parser_eat(parser, T_MINUS))
+    {
+        if (name(parser))
+        {
+            return true;
+        }
+        else if (number(parser))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (number(parser))
+    {
+        return true;
+    }
+    else if (string(parser))
+    {
+        return true;
+    }
+    else if (parser_eat(parser, K_TRUE))
+    {
+        return true;
+    }
+    else if (parser_eat(parser, K_FALSE))
+    {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/*
+ * Helper for procedure call and name
+ * because they both start with an identifier
+ * 
+ * <procedure_call> ::= <identifier> ( [argument_list ] )
+ * 
+ * <name> ::= <identifier> [ [ <expression> ] ]
+ */
+bool procedure_call_or_name_handler(parser_T* parser)
+{
+    if (!identifier(parser))
+    {
+        return false;
+    }
+
+    switch (parser->look_ahead->type)
+    {
+        case T_LPAREN:
+            parser_eat(parser, T_LPAREN);
+
+            // Optional arguments
+            argument_list(parser);
+
+            if (!parser_eat(parser, T_RPAREN))
+            {
+                return false;
+            }
+        default:
+            // Optional array index
+            if (!array_index(parser))
+            {
+                return false;
+            }
+    }
+
+    return true;
+}
+
+/*
+ * <name> ::= <identifier> [ [ <expression> ] ]
+ */
+bool name(parser_T* parser)
+{
+    if (!identifier(parser))
+    {
+        return false;
+    }
+
+    if (!array_index(parser))
+    {
+        return false;
+    }
+    return true;
+}
+
+/*
+ * Handler for array index [ [ <expression> ] ]
+ */
+bool array_index(parser_T* parser)
+{
+    if (parser_eat(parser, T_LBRACKET))
+    {
+        if (!expression(parser))
+        {
+            return false;
+        }
+
+        if (!parser_eat(parser, T_RBRACKET))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
+ * <argument_list> ::=
+ *      <expression>, <argument_list>
+ *    | <expression>
+ */
+bool argument_list(parser_T* parser)
+{
+    if (!expression(parser))
+    {
+        return false;
+    }
+
+    // Optional arguments
+    while (is_token_type(parser, T_COMMA))
+    {
+        parser_eat(parser, T_COMMA);
+        if (!expression(parser))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
+ * <number> ::= [0-9][0-9_]*[.[0-9_]*]
+ */
+bool number(parser_T* parser)
+{
+    if (is_token_type(parser, T_NUMBER_INT))
+    {
+        return parser_eat(parser, T_NUMBER_INT);
+    }
+    else if (is_token_type(parser, T_NUMBER_FLOAT))
+    {
+        return parser_eat(parser, T_NUMBER_FLOAT);
+    }
+    else {
+        return false;
+    }
+}
+
+/*
+ * <string> :: = "[^"]*"
+ */
+bool string(parser_T* parser)
+{
+    return parser_eat(parser, T_STRING);
+}
 
 /* 
  * A list of declaration for ( <declaration> ; )*

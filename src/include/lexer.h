@@ -20,13 +20,9 @@ void lexer_skip_line_comment(lexer_T* lexer);
 void lexer_skip_block_comment(lexer_T* lexer);
 
 Token* lexer_get_next_token(lexer_T* lexer);
-
 Token* lexer_collect_string(lexer_T* lexer);
-
 Token* lexer_collect_id(lexer_T* lexer);
-
 Token* lexer_collect_integer(lexer_T* lexer);
-
 Token* lexer_collect_float(lexer_T** lexer, Token** token);
 
 #endif
