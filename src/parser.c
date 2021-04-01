@@ -374,6 +374,271 @@ bool bound(parser_T* parser)
  *    | <loop_statement>
  *    | <return_statement>
  */
+bool statement(parser_T* parser)
+{
+    bool state;
+    if (assignment_statement(parser))
+    {
+        state = true;
+    }
+    else if (if_statement(parser))
+    {
+        state = true;
+    }
+    else if (loop_statement(parser))
+    {
+        state = true;
+    }
+    else if (return_statement(parser))
+    {
+        state = true;
+    }
+    else
+    {
+        state = false;
+    }
+    return state;
+}
+
+/*
+ * <assignment_statement> ::= <destination> := <expression>
+ */
+bool assignment_statement(parser_T* parser)
+{
+    if (!destination(parser))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_ASSIGNMENT))
+    {
+        return false;
+    }
+
+    if (!expression(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <destination> ::= <identifier> [ [ <expression> ] ]
+ */
+bool destination(parser_T* parser)
+{
+    if (!identifier(parser))
+    {
+        return false;
+    }
+
+    if (!array_index(parser))
+    {
+        return false;
+    }
+    return true;
+}
+
+/*
+ * <if_statement> ::=
+ *      if ( <expression> ) then ( <statement> ; )*
+ *      [ else ( <statement> ; )* ]
+ *      end if
+ */
+bool if_statement(parser_T* parser)
+{
+    if (!parser_eat(parser, K_IF))
+    {
+        return false;
+    }
+
+    if (parser_eat(parser, T_LPAREN))
+    {
+        return false;
+    }
+
+    if (!expression(parser))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_RPAREN))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, K_THEN))
+    {
+        return false;
+    }
+
+    if (!statement_list(parser))
+    {
+        return false;
+    }
+
+    // Optional else statement
+    if (is_token_type(parser, K_ELSE))
+    {
+        parser_eat(parser, K_ELSE);
+        if (!statement_list(parser))
+        {
+            return false;
+        }
+    }
+
+    if (!parser_eat(parser, K_END))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, K_IF))
+    {
+        return false;
+    }
+    return true;
+}
+
+/*
+ * <loop_statement> ::=
+ *      for ( <assignment_statement> ; <expression> )
+ *          ( <statement> ; )*
+ *      end for
+ */
+bool loop_statement(parser)
+{
+    if (!parser_eat(parser, K_FOR))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_LPAREN))
+    {
+        return false;
+    }
+
+    if (!assignment_statement(parser))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_SEMI_COLON))
+    {
+        return false;
+    }
+
+    if (!expression(parser))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_RPAREN))
+    {
+        return false;
+    }
+
+    if (!statement_list(parser))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, K_END))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, K_FOR))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <return_statement> ::= return <expression>
+ */
+bool return_statement(parser)
+{
+    if (!parser_eat(parser, K_RETURN))
+    {
+        return false;
+    }
+
+    if (!expression(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <identifier> ::= [a-zA-Z][a-zA-Z0-9_]*
+ */ 
+bool identifier(parser)
+{
+    return parser_eat(parser, T_ID);
+}
+
+/*
+ * <expression> ::= [ not ] <arith_op> <expression_prime>
+ */
+bool expression(parser)
+{
+    // Optional NOT
+    if (is_token_type(parser, K_NOT))
+    {
+        parser_eat(parser, K_NOT);
+    }
+
+    if (!arith_op(parser))
+    {
+        return false;
+    }
+
+    if (!expression_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * <expression_prime> ::=
+ *      & <arith_op> <expression_prime>
+ *    | | <arith_op> <expression_prime>
+ *    | null
+ */
+bool expression_prime(parser_T* parser)
+{
+    switch (parser->look_ahead->type)
+    {
+        case T_AND:
+            parser_eat(parser, T_AND);
+            break;
+        case T_OR:
+            parser_eat(parser_eat, T_OR);
+            break;
+        // null case
+        default:
+            return true;
+    }
+
+    if (!arith_op(parser))
+    {
+        return false;
+    }
+
+    if (!expression_prime(parser))
+    {
+        return false;
+    }
+
+    return true;
+}
 
 
 

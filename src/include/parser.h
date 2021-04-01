@@ -56,6 +56,8 @@ bool factor(parser_T* parser);
 bool declaration_list(parser_T* parser);
 bool statement_list(parser_T* parser);
 
+bool array_index(parser_T* parser);
+
 // void parse(parser_T* parser);
 // void parse_program(parser_T* parser);
 // void parse_program_body(parser_T* parser);
