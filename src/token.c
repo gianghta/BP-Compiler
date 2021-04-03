@@ -128,9 +128,9 @@ char* print_token(Token* token)
         case T_RPAREN:
             return concatf("T_RPAREN: %s\n", ")");
         case T_LBRACKET:
-            return concatf("T_LBRACKET: %s\n", "{");
+            return concatf("T_LBRACKET: %s\n", "[");
         case T_RBRACKET:
-            return concatf("T_RBRACKET: %s\n", "}");
+            return concatf("T_RBRACKET: %s\n", "]");
         case T_EQ:
             return concatf("T_EQ: %s\n", "=");
         case T_NOT_EQ:

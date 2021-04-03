@@ -124,7 +124,12 @@ bool program_body(parser_T* parser)
         return false;
     }
 
-    if (!parser_eat(parser, K_PROCEDURE))
+    if (!parser_eat(parser, K_PROGRAM))
+    {
+        return false;
+    }
+
+    if (!parser_eat(parser, T_EOF))
     {
         return false;
     }
@@ -138,7 +143,8 @@ bool program_body(parser_T* parser)
  *    | [ global ] <variable_declaration>
  */
 bool declaration(parser_T* parser)
-{
+{   
+    printf("Start parsing declaration...\n");
     bool state;
     if (is_token_type(parser, K_GLOBAL))
     {
@@ -385,28 +391,44 @@ bool bound(parser_T* parser)
  */
 bool statement(parser_T* parser)
 {
-    bool state;
-    if (assignment_statement(parser))
+    // bool state;
+    switch (parser->look_ahead->type)
     {
-        state = true;
+        case K_IF:
+           if_statement(parser);
+           return true;
+        case K_FOR:
+            loop_statement(parser);
+            return true;
+        case K_RETURN:
+            return_statement(parser);
+            return true;
+        default:
+            return assignment_statement(parser);
     }
-    else if (if_statement(parser))
-    {
-        state = true;
-    }
-    else if (loop_statement(parser))
-    {
-        state = true;
-    }
-    else if (return_statement(parser))
-    {
-        state = true;
-    }
-    else
-    {
-        state = false;
-    }
-    return state;
+    return false;
+
+    // if (assignment_statement(parser))
+    // {
+    //     state = true;
+    // }
+    // else if (if_statement(parser))
+    // {
+    //     state = true;
+    // }
+    // else if (loop_statement(parser))
+    // {
+    //     state = true;
+    // }
+    // else if (return_statement(parser))
+    // {
+    //     state = true;
+    // }
+    // else
+    // {
+    //     state = false;
+    // }
+    // return state;
 }
 
 /*
@@ -457,12 +479,13 @@ bool destination(parser_T* parser)
  */
 bool if_statement(parser_T* parser)
 {
+    printf("Start parsing IF statement.\n");
     if (!parser_eat(parser, K_IF))
     {
         return false;
     }
 
-    if (parser_eat(parser, T_LPAREN))
+    if (!parser_eat(parser, T_LPAREN))
     {
         return false;
     }
@@ -595,7 +618,8 @@ bool identifier(parser_T* parser)
  * <expression> ::= [ not ] <arith_op> <expression_prime>
  */
 bool expression(parser_T* parser)
-{
+{   
+    printf("Start parsing expression...\n");
     // Optional NOT
     if (is_token_type(parser, K_NOT))
     {
