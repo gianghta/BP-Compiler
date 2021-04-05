@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+/*
+ * Helper function for reading in source file
+ */
 char* bp_read_file(const char* filename)
 {
     FILE* fp;

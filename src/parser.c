@@ -144,7 +144,6 @@ bool program_body(parser_T* parser)
  */
 bool declaration(parser_T* parser)
 {   
-    printf("Start parsing declaration...\n");
     bool state;
     if (is_token_type(parser, K_GLOBAL))
     {
