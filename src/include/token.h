@@ -57,11 +57,11 @@ typedef enum
     K_FALSE,
     K_WHILE,
     K_FOR
-} token_type;
+} TokenType;
 
 typedef struct
 {
-    token_type type;
+    TokenType type;
     union
     {
         char stringVal[MAX_STRING_LENGTH];
@@ -72,8 +72,8 @@ typedef struct
     } value;
 } Token;
 
-Token* init_token(token_type type);
-token_type check_for_reserved_word(char* str);
+Token* init_token(TokenType type);
+TokenType check_for_reserved_word(char* str);
 void to_lower_case_str(char *p);
 char* concatf(const char* fmt, ...);
 char* print_token(Token* token);

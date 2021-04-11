@@ -19,7 +19,7 @@ typedef enum {
 #define E_MES_INVALID_STRING "Invalid string"
 
 void throw_error(error_code code, int line_number, int column_number);
-void missing_token(token_type type, int line_number, int column_number);
+void missing_token(TokenType type, int line_number, int column_number);
 void assert_parser(char* msg);
 
 #endif

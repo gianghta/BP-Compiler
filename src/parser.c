@@ -15,7 +15,7 @@ parser_T* init_parser(lexer_T* lexer)
 /*
  * Eat/consume a token and look ahead the next one
  */
-bool parser_eat(parser_T* parser, token_type type)
+bool parser_eat(parser_T* parser, TokenType type)
 {
     Token* tmp = init_token(type);
     printf("Matching token. Expected type: ");
@@ -41,7 +41,7 @@ bool parser_eat(parser_T* parser, token_type type)
 /*
  * Helper function checking for correct token type
  */
-bool is_token_type(parser_T* parser, token_type type)
+bool is_token_type(parser_T* parser, TokenType type)
 {
     if (parser->look_ahead->type != type)
     {

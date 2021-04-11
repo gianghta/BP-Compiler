@@ -10,7 +10,7 @@
  */
 struct {
     char keyword[MAX_STRING_LENGTH];
-    token_type type;
+    TokenType type;
 } reserved_words[MAX_KEYWORD_LENGTH] = {
     {"program", K_PROGRAM},
     {"is", K_IS},
@@ -38,7 +38,7 @@ struct {
 /*
  * Token constructor
  */
-Token* init_token(token_type type)
+Token* init_token(TokenType type)
 {
     Token* token = calloc(1, sizeof(Token));
     token->type = type;
@@ -56,7 +56,7 @@ void to_lower_case_str(char *p) {
 /*
  * Check for reserved word from table
  */
-token_type check_for_reserved_word(char* str)
+TokenType check_for_reserved_word(char* str)
 {
     int len = sizeof(reserved_words)/sizeof(reserved_words[0]);
 

@@ -13,9 +13,9 @@ typedef struct PARSER_STRUCT
 } parser_T;
 
 parser_T* init_parser(lexer_T* lexer);
-bool parser_eat(parser_T* parser, token_type type);
+bool parser_eat(parser_T* parser, TokenType type);
 
-bool is_token_type(parser_T* parser, token_type type);
+bool is_token_type(parser_T* parser, TokenType type);
 
 bool parse(parser_T* parser);
 bool program(parser_T* parser);
