@@ -13,6 +13,7 @@ Symbol* init_symbol()
     sym->arr_size = 0;
     sym->is_indexed = false;
     sym->is_not_empty = true;
+    sym->params = calloc(1, sizeof(struct SymbolNode));
     return sym;
 }
 
@@ -28,6 +29,7 @@ Symbol* init_symbol_with_id(char* id_name, TokenType token_type)
     sym->arr_size = 0;
     sym->is_indexed = false;
     sym->is_not_empty = true;
+    sym->params = calloc(1, sizeof(struct SymbolNode));
     return sym;
 }
 Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, SymbolType sym_type, TypeClass type_c)
@@ -42,6 +44,7 @@ Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, Sym
     sym->arr_size = 0;
     sym->is_indexed = false;
     sym->is_not_empty = true;
+    sym->params = calloc(1, sizeof(struct SymbolNode));
     return sym;
 }
 
@@ -49,7 +52,10 @@ void free_symbol(Symbol* sym)
 {
     if (sym != NULL)
     {
-        free_params_list(sym->params);
+        if (sym->params != NULL)
+        {
+            free_params_list(sym->params);
+        }
         free(sym);
         sym = NULL;
     }
@@ -64,5 +70,20 @@ void free_params_list(SymbolNode* head)
         tmp = head;
         head = head->next_symbol;
         free(tmp);
+    }
+}
+
+char* print_symbol_type(SymbolType type)
+{
+    switch(type)
+    {
+        case ST_KEYWORD:
+            return concatf("ST_KEYWORD");
+        case ST_VARIABLE:
+            return concatf("ST_VARIABLE");
+        case ST_PROCEDURE:
+            return concatf("ST_PROCEDURE");
+        default:
+            return concatf("ST_UNKNOWN");
     }
 }

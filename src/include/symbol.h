@@ -61,5 +61,6 @@ Symbol* init_symbol_with_id(char* id_name, TokenType token_type);
 Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, SymbolType sym_type, TypeClass type_c);
 void free_symbol(Symbol* sym);
 void free_params_list(SymbolNode* head);
+char* print_symbol_type(SymbolType type);
 
 #endif

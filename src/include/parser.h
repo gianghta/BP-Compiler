@@ -2,17 +2,19 @@
 #define PARSER_H
 #include "lexer.h"
 #include "token.h"
+#include "semantic.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 typedef struct PARSER_STRUCT
 {
     lexer_T* lexer;
+    Semantic* sem;
     Token* current_token;
     Token* look_ahead;
 } parser_T;
 
-parser_T* init_parser(lexer_T* lexer);
+parser_T* init_parser(lexer_T* lexer, Semantic* sem);
 bool parser_eat(parser_T* parser, TokenType type);
 
 bool is_token_type(parser_T* parser, TokenType type);

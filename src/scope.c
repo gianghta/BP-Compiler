@@ -4,7 +4,7 @@
 Scope* init_scope()
 {
     Scope* new_scope = calloc(1, sizeof(struct Scope));
-    new_scope->table = NULL;
+    new_scope->table = NULL;    // To initiate hashtable, must first set it to null
     new_scope->prev_scope = NULL;
     return new_scope;
 }
@@ -13,6 +13,7 @@ void free_scope(Scope* scope)
 {
     if (scope != NULL)
     {
+        free_symbol_table(scope);
         free(scope);
         scope = NULL;
     }
@@ -59,10 +60,19 @@ bool has_symbol(Scope* scope, char* id)
 
 void print_symbol_table(Scope* scope)
 {
+    SymbolTable *s;
 
+    for (s = scope->table; s != NULL; s = (SymbolTable*)(s->hh.next))
+    {
+        printf("Symbol of type %s. symbol id: %s. symbol name: %s\n", print_symbol_type(s->entry.stype), s->id, s->entry.id);
+    }
 }
 
 void free_symbol_table(Scope* scope)
 {
-    HASH_CLEAR(hh, scope->table);
+    SymbolTable *current_symbol, *tmp;
+    HASH_ITER(hh, scope->table, current_symbol, tmp) {
+        HASH_DEL(scope->table, current_symbol);
+        free(current_symbol);
+    }
 }

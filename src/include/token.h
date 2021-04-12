@@ -2,7 +2,9 @@
 #define TOKEN_H
 
 #include <stdbool.h>
-#include <stdarg.h>
+
+#include "custom.h"
+
 #define MAX_STRING_LENGTH 50
 #define MAX_KEYWORD_LENGTH 50
 
@@ -75,6 +77,5 @@ typedef struct
 Token* init_token(TokenType type);
 TokenType check_for_reserved_word(char* str);
 void to_lower_case_str(char *p);
-char* concatf(const char* fmt, ...);
 char* print_token(Token* token);
 #endif

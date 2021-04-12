@@ -3,10 +3,11 @@
 /*
  * Parser constructor
  */
-parser_T* init_parser(lexer_T* lexer)
+parser_T* init_parser(lexer_T* lexer, Semantic* sem)
 {
     parser_T* parser = calloc(1, sizeof(struct PARSER_STRUCT));
     parser->lexer = lexer;
+    parser->sem = sem;
     parser->current_token = (void*) 0;
     parser->look_ahead = lexer_get_next_token(lexer);
     return parser;
@@ -75,6 +76,8 @@ bool program(parser_T* parser)
     }
 
     if (parser->look_ahead->type == T_EOF) parser_eat(parser, T_EOF);
+
+    exit_current_scope(parser->sem);
 
     return true;
 }
