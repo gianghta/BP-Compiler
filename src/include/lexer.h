@@ -1,6 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 #include "token.h"
+#include "semantic.h"
 
 typedef struct LEXER_STRUCT
 {
@@ -8,9 +9,10 @@ typedef struct LEXER_STRUCT
     unsigned int start;
     unsigned int current;
     char* source;
+    Semantic* sem;
 } lexer_T;
 
-lexer_T* init_lexer(char* contents);
+lexer_T* init_lexer(char* contents, Semantic* sem);
 
 void lexer_advance(lexer_T* lexer);
 

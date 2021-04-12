@@ -194,3 +194,13 @@ void print_scope(Semantic* sem, bool is_global)
         print_symbol_table(sem->current_local);
     }
 }
+
+TokenType check_for_reserved_word(Semantic* sem, char* str)
+{
+    if (has_current_global_symbol(sem, str, true))
+    {
+        Symbol tmp = get_current_global_symbol(sem, str, true);
+        return tmp.ttype;
+    }
+    return T_ID;
+}

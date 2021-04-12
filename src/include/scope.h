@@ -1,12 +1,14 @@
 #ifndef SCOPE_H
 #define SCOPE_H
 
+#define MAX_KEYWORD_LENGTH 50
+
 #include "symbol.h"
 #include "uthash.h"
 
 
 typedef struct SymbolTable {
-    char* id;
+    char id[MAX_KEYWORD_LENGTH];
     Symbol entry;
     UT_hash_handle hh;
 } SymbolTable;

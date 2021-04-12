@@ -21,10 +21,10 @@ void free_scope(Scope* scope)
 
 void set_symbol(Scope* scope, char* s, Symbol sym)
 {
-    SymbolTable* new_symbol;
+    SymbolTable* new_symbol = NULL;
 
     new_symbol = calloc(1, sizeof(SymbolTable));
-    new_symbol->id = s;
+    strcpy(new_symbol->id, s);
     new_symbol->entry = sym;
     HASH_ADD_STR(scope->table, id, new_symbol);
 }
@@ -33,7 +33,7 @@ Symbol get_symbol(Scope* scope, char* id)
 {
     if (has_symbol(scope, id))
     {
-        SymbolTable* scope_table;
+        SymbolTable* scope_table = NULL;
         HASH_FIND_STR(scope->table, id, scope_table);
         return scope_table->entry;
     }
@@ -46,21 +46,22 @@ Symbol get_symbol(Scope* scope, char* id)
 
 bool has_symbol(Scope* scope, char* id)
 {
-    SymbolTable* scope_table;
+    SymbolTable* scope_table = NULL;
     HASH_FIND_STR(scope->table, id, scope_table);
 
-
-    Symbol sym = scope_table->entry;
-    if (sym.is_not_empty != false)
+    if (scope_table == NULL)
+    {
+        return false;
+    }
+    else
     {
         return true;
     }
-    return false;
 }
 
 void print_symbol_table(Scope* scope)
 {
-    SymbolTable *s;
+    SymbolTable *s = NULL;
 
     for (s = scope->table; s != NULL; s = (SymbolTable*)(s->hh.next))
     {
@@ -70,7 +71,7 @@ void print_symbol_table(Scope* scope)
 
 void free_symbol_table(Scope* scope)
 {
-    SymbolTable *current_symbol, *tmp;
+    SymbolTable *current_symbol, *tmp = NULL;
     HASH_ITER(hh, scope->table, current_symbol, tmp) {
         HASH_DEL(scope->table, current_symbol);
         free(current_symbol);

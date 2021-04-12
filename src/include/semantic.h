@@ -25,6 +25,8 @@ bool has_current_global_symbol(Semantic* sem, char* s, bool is_global);
 void set_current_procedure(Semantic* sem, Symbol proc);
 Symbol get_current_procedure(Semantic* sem);
 
+TokenType check_for_reserved_word(Semantic* sem, char* str);
+
 void print_scope(Semantic* sem, bool is_global);
 
 #endif

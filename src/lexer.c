@@ -5,10 +5,11 @@
 #include <ctype.h>
 
 
-lexer_T* init_lexer(char* source)
+lexer_T* init_lexer(char* source, Semantic* sem)
 {
     lexer_T* lexer = calloc(1, sizeof(struct LEXER_STRUCT));
     lexer->source = source;
+    lexer->sem = sem;
     lexer->start = 0;
     lexer->current_char = source[lexer->start];
 
@@ -255,7 +256,7 @@ Token* lexer_collect_id(lexer_T* lexer)
     }
 
     to_lower_case_str(token->value.stringVal);
-    token->type = check_for_reserved_word(token->value.stringVal);
+    token->type = check_for_reserved_word(lexer->sem, (char*)token->value.stringVal);
     return token;
 }
 

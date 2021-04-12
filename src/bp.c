@@ -12,7 +12,7 @@
 void bp_compile(char* src)
 {
     Semantic* sem = init_semantic_analyzer();
-    lexer_T* lexer = init_lexer(src);
+    lexer_T* lexer = init_lexer(src, sem);
     parser_T* parser = init_parser(lexer, sem);
     
     printf("\nStart parsing....\n");

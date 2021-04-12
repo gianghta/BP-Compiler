@@ -6,7 +6,6 @@
 #include "custom.h"
 
 #define MAX_STRING_LENGTH 50
-#define MAX_KEYWORD_LENGTH 50
 
 typedef enum
 {
@@ -75,7 +74,6 @@ typedef struct
 } Token;
 
 Token* init_token(TokenType type);
-TokenType check_for_reserved_word(char* str);
 void to_lower_case_str(char *p);
 char* print_token(Token* token);
 #endif

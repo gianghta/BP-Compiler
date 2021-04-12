@@ -5,37 +5,6 @@
 #include <stdio.h>
 
 /*
- * Table for mapping reserved word
- * into Token Type
- */
-struct {
-    char keyword[MAX_STRING_LENGTH];
-    TokenType type;
-} reserved_words[MAX_KEYWORD_LENGTH] = {
-    {"program", K_PROGRAM},
-    {"is", K_IS},
-    {"global", K_GLOBAL},
-    {"variable", K_VARIABLE},
-    {"integer", K_INT},
-    {"float", K_FLOAT},
-    {"string", K_STRING},
-    {"bool", K_BOOL},
-    {"char", K_CHAR},
-    {"procedure", K_PROCEDURE},
-    {"return", K_RETURN},
-    {"not", K_NOT},
-    {"begin", K_BEGIN},
-    {"end", K_END},
-    {"if", K_IF},
-    {"else", K_ELSE},
-    {"then", K_THEN},
-    {"true", K_TRUE},
-    {"false", K_FALSE},
-    {"while", K_WHILE},
-    {"for", K_FOR},
-};
-
-/*
  * Token constructor
  */
 Token* init_token(TokenType type)
@@ -51,23 +20,6 @@ Token* init_token(TokenType type)
  */
 void to_lower_case_str(char *p) {
     for ( ; *p; ++p) *p = tolower(*p);
-}
-
-/*
- * Check for reserved word from table
- */
-TokenType check_for_reserved_word(char* str)
-{
-    int len = sizeof(reserved_words)/sizeof(reserved_words[0]);
-
-    for (int i = 0; i < len; i++)
-    {
-        if (strcmp(reserved_words[i].keyword, str) == 0)
-        {
-            return reserved_words[i].type;
-        }
-    }
-    return T_ID;
 }
 
 /*
