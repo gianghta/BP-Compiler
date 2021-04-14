@@ -174,7 +174,14 @@ void set_current_procedure(Semantic* sem, Symbol proc)
 {
     if (sem != NULL)
     {
-        set_symbol(sem->current_local, _CUR_PROC, proc);
+        if (has_current_symbol(sem, _CUR_PROC))
+        {
+            update_symbol(sem->current_local, _CUR_PROC, proc);
+        }
+        else
+        {
+            set_symbol(sem->current_local, _CUR_PROC, proc);
+        }
     }
 }
 

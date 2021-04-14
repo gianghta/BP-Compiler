@@ -48,6 +48,43 @@ Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, Sym
     return sym;
 }
 
+/*
+ * Take head SymbolNode of params
+ * and then traverse the params linked list
+ * until reach index node
+ */
+Symbol get_nth_param(Symbol* sym, int idx)
+{
+    SymbolNode *ptr = sym->params;
+    int count = 0;
+    while (ptr !=NULL)
+    {
+        if (count == idx)
+        {
+            return ptr->symbol;
+        }
+        count++;
+        ptr = ptr->next_symbol;
+    }
+
+    // User ask for a non-existent element, fail.
+    assert(0);
+}
+
+int params_size(Symbol* sym)
+{
+    int count = 0;
+    SymbolNode *ptr = sym->params;
+
+    while (ptr != NULL)
+    {
+        ptr = ptr->next_symbol;
+        count += 1;
+    }
+
+    return count;
+}
+
 void free_symbol(Symbol* sym)
 {
     if (sym != NULL)
@@ -85,5 +122,22 @@ char* print_symbol_type(SymbolType type)
             return concatf("ST_PROCEDURE");
         default:
             return concatf("ST_UNKNOWN");
+    }
+}
+
+char* print_type_class(TypeClass type)
+{
+    switch(type)
+    {
+        case TC_INT:
+            return concatf("TC_INT");
+        case TC_FLOAT:
+            return concatf("TC_FLOAT");
+        case TC_STRING:
+            return concatf("TC_STRING");
+        case TC_BOOL:
+            return concatf("TC_BOOL");
+        default:
+            return concatf("TC_UNKNOWN");
     }
 }

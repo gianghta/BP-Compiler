@@ -2,6 +2,7 @@
 #define SYMBOL_H
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "token.h"
 
@@ -59,8 +60,11 @@ typedef struct SymbolNode {
 Symbol* init_symbol();
 Symbol* init_symbol_with_id(char* id_name, TokenType token_type);
 Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, SymbolType sym_type, TypeClass type_c);
+Symbol get_nth_param(Symbol* sym, int idx);
+int params_size(Symbol* sym);
 void free_symbol(Symbol* sym);
 void free_params_list(SymbolNode* head);
 char* print_symbol_type(SymbolType type);
+char* print_type_class(TypeClass type);
 
 #endif

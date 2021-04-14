@@ -21,6 +21,7 @@ typedef struct Scope {
 Scope* init_scope();
 void free_scope(Scope* scope);
 void set_symbol(Scope* scope, char* s, Symbol sym);
+void update_symbol(Scope* scope, char* s, Symbol sym);
 Symbol get_symbol(Scope* scope, char* id);
 bool has_symbol(Scope* scope, char* id);
 void print_symbol_table(Scope* scope);

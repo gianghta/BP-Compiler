@@ -25,44 +25,49 @@ bool program_header(parser_T* parser);
 bool program_body(parser_T* parser);
 bool declaration(parser_T* parser);
 
-bool procedure_declaration(parser_T* parser);
-bool procedure_header(parser_T* parser);
-bool parameter_list(parser_T* parser);
-bool parameter(parser_T* parser);
+bool procedure_declaration(parser_T* parser, Symbol* decl);
+bool procedure_header(parser_T* parser, Symbol* decl);
+bool parameter_list(parser_T* parser, Symbol* decl);
+bool parameter(parser_T* parser, Symbol* param);
 bool procedure_body(parser_T* parser);
 
-bool variable_declaration(parser_T* parser);
-bool type_mark(parser_T* parser);
-bool bound(parser_T* parser);
+bool variable_declaration(parser_T* parser, Symbol* decl);
+bool type_mark(parser_T* parser, Symbol* id);
+bool bound(parser_T* parser, Symbol* id);
 
 bool statement(parser_T* parser);
 bool procedure_call(parser_T* parser);
 bool assignment_statement(parser_T* parser);
-bool destination(parser_T* parser);
+bool destination(parser_T* parser, Symbol* id);
 bool if_statement(parser_T* parser);
 bool loop_statement(parser_T* parser);
 bool return_statement(parser_T* parser);
 
-bool identifier(parser_T* parser);
+bool identifier(parser_T* parser, Symbol* id);
 
-bool expression(parser_T* parser);
-bool expression_prime(parser_T* parser);
-bool arith_op(parser_T* parser);
-bool arith_op_prime(parser_T* parser);
-bool relation(parser_T* parser);
-bool relation_prime(parser_T* parser);
-bool term(parser_T* parser);
-bool term_prime(parser_T* parser);
-bool factor(parser_T* parser);
+bool expression(parser_T* parser, Symbol* exp);
+bool expression_prime(parser_T* parser, Symbol* exp);
+bool arith_op(parser_T* parser, Symbol* op);
+bool arith_op_prime(parser_T* parser, Symbol* op);
+bool relation(parser_T* parser, Symbol* rel);
+bool relation_prime(parser_T* parser, Symbol* rel);
+bool term(parser_T* parser, Symbol* tm);
+bool term_prime(parser_T* parser, Symbol* tm);
+bool factor(parser_T* parser, Symbol* fac);
 
-bool procedure_call_or_name_handler(parser_T* parser);
-bool name(parser_T* parser);
-bool array_index(parser_T* parser);
-bool argument_list(parser_T* parser);
-bool number(parser_T* parser);
-bool string(parser_T* parser);
+bool procedure_call_or_name_handler(parser_T* parser, Symbol* id);
+bool name(parser_T* parser, Symbol* id);
+bool array_index(parser_T* parser, Symbol* id);
+bool argument_list(parser_T* parser, Symbol* id);
+bool number(parser_T* parser, Symbol* num);
+bool string(parser_T* parser, Symbol* str);
 
 bool declaration_list(parser_T* parser);
 bool statement_list(parser_T* parser);
+
+bool type_checking(Symbol* dest, Symbol* exp);
+bool expression_type_checking(Symbol* lhs, Symbol* rhs);
+bool arithmetic_type_checking(Symbol* lhs, Symbol* rhs);
+bool relation_type_checking(Symbol* lhs, Symbol* rhs, Token* op);
 
 #endif

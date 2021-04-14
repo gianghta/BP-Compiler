@@ -89,12 +89,26 @@ bool program_header(parser_T* parser)
 {
     parser_eat(parser, K_PROGRAM);
 
-    if (!identifier(parser))
+    Symbol *id = calloc(1, sizeof(Symbol));
+
+    if (!identifier(parser, id))
     {
         return false;
     }
+
+    if (has_current_global_symbol(parser->sem, id->id, true))
+    {
+        printf("Identifier %s is already used.\n", id->id);
+        return false;
+    }
+    else
+    {
+        set_symbol_semantic(parser->sem, id->id, *id, true);
+    }
     
     parser_eat(parser, K_IS);
+
+    free(id);
 
     return true;
 }
@@ -147,6 +161,9 @@ bool program_body(parser_T* parser)
  */
 bool declaration(parser_T* parser)
 {   
+    Symbol *decl = calloc(1, sizeof(Symbol));
+    decl->is_global = is_token_type(parser, K_GLOBAL);
+
     bool state;
     if (is_token_type(parser, K_GLOBAL))
     {
@@ -156,10 +173,10 @@ bool declaration(parser_T* parser)
     switch (parser->look_ahead->type)
     {
         case K_PROCEDURE:
-            state = procedure_declaration(parser);
+            state = procedure_declaration(parser, decl);
             break;
         case K_VARIABLE:
-            state = variable_declaration(parser);
+            state = variable_declaration(parser, decl);
             break;
         default:
             state = false;
@@ -170,17 +187,35 @@ bool declaration(parser_T* parser)
 /*
  * <procedure_declaration> ::= <procedure_header> <procedure_body>
  */
-bool procedure_declaration(parser_T* parser)
+bool procedure_declaration(parser_T* parser, Symbol* decl)
 {
-    if (!procedure_header(parser))
+    if (!procedure_header(parser, decl))
     {
         return false;
     }
+
+    decl->stype = ST_PROCEDURE;
+
+    // Check for duplicate identifier in current scope and global
+    if (has_current_global_symbol(parser->sem, decl->id, decl->is_global))
+    {
+        printf("Procedure name %s is already used in current scope.\n", decl->id);
+        return false;
+    }
+
+    // Set symbol in current scope
+    set_symbol_semantic(parser->sem, decl->id, *decl, decl->is_global);
+
+    // Set to procedure scope for type checking return type
+    set_current_procedure(parser->sem, *decl);
 
     if (!procedure_body(parser))
     {
         return false;
     }
+
+    print_scope(parser->sem, decl->is_global);
+    exit_current_scope(parser->sem);
 
     return true;
 }
@@ -189,14 +224,16 @@ bool procedure_declaration(parser_T* parser)
  * <procedure_header> ::=
  *      procedure <identifier> : <type_mark> ( [ <parameter_list> ] )
  */
-bool procedure_header(parser_T* parser)
+bool procedure_header(parser_T* parser, Symbol* decl)
 {
     if (!parser_eat(parser, K_PROCEDURE))
     {
         return false;
     }
 
-    if (!identifier(parser))
+    create_new_scope(parser->sem);
+
+    if (!identifier(parser, decl))
     {
         return false;
     }
@@ -206,7 +243,7 @@ bool procedure_header(parser_T* parser)
         return false;
     }
 
-    if (!type_mark(parser))
+    if (!type_mark(parser, decl))
     {
         return false;
     }
@@ -217,7 +254,7 @@ bool procedure_header(parser_T* parser)
     }
 
     // Optional parameter list
-    parameter_list(parser);
+    parameter_list(parser, decl);
 
     if (!parser_eat(parser, T_RPAREN))
     {
@@ -231,20 +268,68 @@ bool procedure_header(parser_T* parser)
  *      <parameter>, <parameter_list>
  *    | <parameter>
  */
-bool parameter_list(parser_T* parser)
-{
-    if (!parameter(parser))
+bool parameter_list(parser_T* parser, Symbol* decl)
+{   
+    Symbol param;
+    if (!parameter(parser, &param))
     {
         return false;
     }
     
+    if (decl->params == NULL)
+    {
+        decl->params->symbol = param;
+        decl->params->next_symbol = NULL;
+    }
+    else
+    {
+        SymbolNode *ptr, *new_node;
+        new_node = calloc(1, sizeof(SymbolNode));
+
+        new_node->symbol = param;
+        new_node->next_symbol = NULL;
+
+        ptr = decl->params;
+
+        while (ptr != NULL && ptr->next_symbol != NULL)
+        {
+            ptr = ptr->next_symbol;
+        }
+
+        ptr->next_symbol = new_node;
+    }
+
     // Optional parameters
     while (is_token_type(parser, T_COMMA))
     {
         parser_eat(parser, T_COMMA);
-        if (!parameter(parser))
+        param = *init_symbol();
+        if (!parameter(parser, &param))
         {
             return false;
+        }
+
+        if (decl->params == NULL)
+        {
+            decl->params->symbol = param;
+            decl->params->next_symbol = NULL;
+        }
+        else
+        {
+            SymbolNode *ptr, *new_node;
+            new_node = calloc(1, sizeof(SymbolNode));
+
+            new_node->symbol = param;
+            new_node->next_symbol = NULL;
+
+            ptr = decl->params;
+
+            while (ptr != NULL && ptr->next_symbol != NULL)
+            {
+                ptr = ptr->next_symbol;
+            }
+
+            ptr->next_symbol = new_node;
         }
     }
     return true;
@@ -253,9 +338,9 @@ bool parameter_list(parser_T* parser)
 /*
  * <parameter> ::= <variable_declaration>
  */
-bool parameter(parser_T* parser)
+bool parameter(parser_T* parser, Symbol* param)
 {
-    return variable_declaration(parser);
+    return variable_declaration(parser, param);
 }
 
 /*
@@ -298,15 +383,24 @@ bool procedure_body(parser_T* parser)
  * <variable_declaration> ::=
  *      variable <identifier> : <type_mark> [ [ <bound ] ]
  */
-bool variable_declaration(parser_T* parser)
+bool variable_declaration(parser_T* parser, Symbol* decl)
 {
     if (!parser_eat(parser, K_VARIABLE))
     {
         return false;
     }
 
-    if (!identifier(parser))
+    decl->stype = ST_VARIABLE;
+
+    if (!identifier(parser, decl))
     {
+        return false;
+    }
+
+    // Check for duplicate identifier name in current scope
+    if (has_current_global_symbol(parser->sem, decl->id, decl->is_global))
+    {
+        printf("Variable name \'%s\' is already in used in current scope.\n", decl->id);
         return false;
     }
 
@@ -315,7 +409,7 @@ bool variable_declaration(parser_T* parser)
         return false;
     }
 
-    if (!type_mark(parser))
+    if (!type_mark(parser, decl))
     {
         return false;
     }
@@ -324,10 +418,12 @@ bool variable_declaration(parser_T* parser)
     if (is_token_type(parser, T_LBRACKET))
     {
         parser_eat(parser, T_LBRACKET);
-        if (!bound(parser))
+        if (!bound(parser, decl))
         {
             return false;
         }
+
+        decl->is_arr = true;
 
         if (!is_token_type(parser, T_RBRACKET))
         {
@@ -336,6 +432,9 @@ bool variable_declaration(parser_T* parser)
         parser_eat(parser, T_RBRACKET);
     }
 
+    // Set symbol to current scope
+    set_symbol_semantic(parser->sem, decl->id, *decl, decl->is_global);
+
     return true;
 }
 
@@ -343,21 +442,25 @@ bool variable_declaration(parser_T* parser)
  * <type_mark> ::=
  *      integer | float | string | bool
  */
-bool type_mark(parser_T* parser)
+bool type_mark(parser_T* parser, Symbol* id)
 {   
     switch (parser->look_ahead->type)
     {
         case K_INT:
             parser_eat(parser, K_INT);
+            id->type = TC_INT;
             break;
         case K_FLOAT:
             parser_eat(parser, K_FLOAT);
+            id->type = TC_FLOAT;
             break;
         case K_STRING:
             parser_eat(parser, K_STRING);
+            id->type = TC_STRING;
             break;
         case K_BOOL:
             parser_eat(parser, K_BOOL);
+            id->type = TC_BOOL;
             break;
         default:
             return false;
@@ -367,15 +470,14 @@ bool type_mark(parser_T* parser)
 
 /*
  */
-bool bound(parser_T* parser)
+bool bound(parser_T* parser, Symbol* id)
 {
-    Token tmp = {
-        .type = parser->look_ahead->type,
-        .value = parser->look_ahead->value
-    };
+    Symbol num;
+    int tmp = parser->look_ahead->value.intVal;
 
-    if (tmp.value.intVal && tmp.type == T_NUMBER_INT)
+    if (number(parser, &num) && num.type == T_NUMBER_INT)
     {
+        id->arr_size = tmp;
         return parser_eat(parser, T_NUMBER_INT);
     }
     else
@@ -409,28 +511,6 @@ bool statement(parser_T* parser)
             return assignment_statement(parser);
     }
     return false;
-
-    // if (assignment_statement(parser))
-    // {
-    //     state = true;
-    // }
-    // else if (if_statement(parser))
-    // {
-    //     state = true;
-    // }
-    // else if (loop_statement(parser))
-    // {
-    //     state = true;
-    // }
-    // else if (return_statement(parser))
-    // {
-    //     state = true;
-    // }
-    // else
-    // {
-    //     state = false;
-    // }
-    // return state;
 }
 
 /*
@@ -438,7 +518,8 @@ bool statement(parser_T* parser)
  */
 bool assignment_statement(parser_T* parser)
 {
-    if (!destination(parser))
+    Symbol dest, exp;
+    if (!destination(parser, &dest))
     {
         return false;
     }
@@ -448,7 +529,13 @@ bool assignment_statement(parser_T* parser)
         return false;
     }
 
-    if (!expression(parser))
+    if (!expression(parser, &exp))
+    {
+        return false;
+    }
+
+    // Type checking
+    if (!type_checking(&dest, &exp))
     {
         return false;
     }
@@ -459,14 +546,24 @@ bool assignment_statement(parser_T* parser)
 /*
  * <destination> ::= <identifier> [ [ <expression> ] ]
  */
-bool destination(parser_T* parser)
+bool destination(parser_T* parser, Symbol* id)
 {
-    if (!identifier(parser))
+    if (!identifier(parser, id))
     {
         return false;
     }
 
-    if (!array_index(parser))
+    // Check if identifier is in local or global scope
+    if (has_current_symbol(parser->sem, id->id))
+    {
+        printf("\'%s\' is not declared in scope.\n", id->id);
+        return false;
+    }
+
+    // Get id from local or global scope
+    *id = get_current_symbol(parser->sem, id->id);
+
+    if (!array_index(parser, id))
     {
         return false;
     }
@@ -481,7 +578,6 @@ bool destination(parser_T* parser)
  */
 bool if_statement(parser_T* parser)
 {
-    printf("Start parsing IF statement.\n");
     if (!parser_eat(parser, K_IF))
     {
         return false;
@@ -492,9 +588,21 @@ bool if_statement(parser_T* parser)
         return false;
     }
 
-    if (!expression(parser))
+    Symbol exp;
+
+    if (!expression(parser, &exp))
     {
         return false;
+    }
+
+    // Type checking for boolean value
+    if (exp.type == TC_INT)
+    {
+        exp.type = TC_BOOL;
+    }
+    else if (exp.type != TC_BOOL)
+    {
+        printf("If statement expressions must evaluate to boolean value.\n");
     }
 
     if (!parser_eat(parser, T_RPAREN))
@@ -562,9 +670,21 @@ bool loop_statement(parser_T* parser)
         return false;
     }
 
-    if (!expression(parser))
+    Symbol exp;
+
+    if (!expression(parser, &exp))
     {
         return false;
+    }
+
+    // Type checking for boolean value
+    if (exp.type == TC_INT)
+    {
+        exp.type = TC_BOOL;
+    }
+    else if (exp.type != TC_BOOL)
+    {
+        printf("Loop statement expressions must evalutate to boolean value.\n");
     }
 
     if (!parser_eat(parser, T_RPAREN))
@@ -600,7 +720,21 @@ bool return_statement(parser_T* parser)
         return false;
     }
 
-    if (!expression(parser))
+    Symbol exp;
+
+    if (!expression(parser, &exp))
+    {
+        return false;
+    }
+
+    // Type checking to match procedure return type
+    Symbol proc = get_current_procedure(parser->sem);
+    if (proc.type == TC_UNKNOWN)
+    {
+        printf("Return statements must be within a procedure.\n");
+        return false;
+    }
+    else if (!type_checking(&proc, &exp))
     {
         return false;
     }
@@ -611,29 +745,48 @@ bool return_statement(parser_T* parser)
 /*
  * <identifier> ::= [a-zA-Z][a-zA-Z0-9_]*
  */ 
-bool identifier(parser_T* parser)
+bool identifier(parser_T* parser, Symbol* id)
 {
+    if (is_token_type(parser, T_ID))
+    {
+        id->id = parser->look_ahead->value.stringVal;
+        id->ttype = parser->look_ahead->type;
+    }
     return parser_eat(parser, T_ID);
 }
 
 /*
  * <expression> ::= [ not ] <arith_op> <expression_prime>
  */
-bool expression(parser_T* parser)
+bool expression(parser_T* parser, Symbol* exp)
 {   
-    printf("Start parsing expression...\n");
     // Optional NOT
+    bool not_flag = false;
     if (is_token_type(parser, K_NOT))
     {
+        not_flag = true;
         parser_eat(parser, K_NOT);
     }
 
-    if (!arith_op(parser))
+    if (!arith_op(parser, exp))
     {
         return false;
     }
 
-    if (!expression_prime(parser))
+    // Type checking for not operator
+    // Valid:
+    // bool
+    // int
+
+    if (not_flag)
+    {
+        if (exp->type != TC_BOOL && exp->type != TC_INT)
+        {
+            printf("!= operator is defined for bool and int only.\n");
+        }
+    }
+
+    if (!expression_prime(parser, exp))
     {
         return false;
     }
@@ -647,7 +800,7 @@ bool expression(parser_T* parser)
  *    | | <arith_op> <expression_prime>
  *    | null
  */
-bool expression_prime(parser_T* parser)
+bool expression_prime(parser_T* parser, Symbol* exp)
 {
     switch (parser->look_ahead->type)
     {
@@ -662,12 +815,17 @@ bool expression_prime(parser_T* parser)
             return true;
     }
 
-    if (!arith_op(parser))
+    Symbol rhs;
+
+    if (!arith_op(parser, &rhs))
     {
         return false;
     }
 
-    if (!expression_prime(parser))
+    // Type checking and convert type for 'and', 'or' operators
+    expression_type_checking(exp, &rhs);
+
+    if (!expression_prime(parser, exp))
     {
         return false;
     }
@@ -678,14 +836,14 @@ bool expression_prime(parser_T* parser)
 /*
  * <arith_op> ::= <relation> <arith_op_prime>
  */
-bool arith_op(parser_T* parser)
+bool arith_op(parser_T* parser, Symbol* op)
 {
-    if (!relation(parser))
+    if (!relation(parser, op))
     {
         return false;
     }
 
-    if (!arith_op_prime(parser))
+    if (!arith_op_prime(parser, op))
     {
         return false;
     }
@@ -698,7 +856,7 @@ bool arith_op(parser_T* parser)
  *    | - <relation> <arith_op_prime>
  *    | null
  */
-bool arith_op_prime(parser_T* parser)
+bool arith_op_prime(parser_T* parser, Symbol* op)
 {
     switch (parser->look_ahead->type)
     {
@@ -712,12 +870,20 @@ bool arith_op_prime(parser_T* parser)
             return true;
     }
 
-    if (!relation(parser))
+    Symbol rhs;
+
+    if (!relation(parser, &rhs))
     {
         return false;
     }
 
-    if (!arith_op_prime(parser))
+    // Type checking to convert type for + -
+    if (!arithmetic_type_checking(op, &rhs))
+    {
+        return false;
+    }
+
+    if (!arith_op_prime(parser, op))
     {
         return false;
     }
@@ -728,14 +894,14 @@ bool arith_op_prime(parser_T* parser)
 /*
  * <relation> ::= <term> <relation_prime>
  */
-bool relation(parser_T* parser)
+bool relation(parser_T* parser, Symbol* rel)
 {
-    if (!term(parser))
+    if (!term(parser, rel))
     {
         return false;
     }
 
-    if (!relation_prime(parser))
+    if (!relation_prime(parser, rel))
     {
         return false;
     }
@@ -753,7 +919,7 @@ bool relation(parser_T* parser)
  *        | !=  <term> <relation_prime>
  *        | null
  */
-bool relation_prime(parser_T* parser)
+bool relation_prime(parser_T* parser, Symbol* rel)
 {
     switch (parser->look_ahead->type)
     {
@@ -779,12 +945,25 @@ bool relation_prime(parser_T* parser)
             return true;
     }
 
-    if (!term(parser))
+    Token op = *parser->look_ahead;
+    Symbol rhs;
+
+
+    if (!term(parser,&rhs))
     {
         return false;
     }
 
-    if (!relation_prime(parser))
+    // Type checking to convert type for relational operators
+    if (!relation_type_checking(rel, &rhs, &op))
+    {
+        return false;
+    }
+
+    // Relation successfully evaluates to boolean
+    rel->type = TC_BOOL;
+
+    if (!relation_prime(parser, rel))
     {
         return false;
     }
@@ -795,14 +974,14 @@ bool relation_prime(parser_T* parser)
 /*
  * <term> ::= <factor> <term_prime>
  */
-bool term(parser_T* parser)
+bool term(parser_T* parser, Symbol* tm)
 {
-    if (!factor(parser))
+    if (!factor(parser, tm))
     {
         return false;
     }
 
-    if (!term_prime(parser))
+    if (!term_prime(parser, tm))
     {
         return false;
     }
@@ -816,7 +995,7 @@ bool term(parser_T* parser)
  *     | /  <factor> <term_prime>
  *     | null
  */
-bool term_prime(parser_T* parser)
+bool term_prime(parser_T* parser, Symbol* tm)
 {
     switch (parser->look_ahead->type)
     {
@@ -830,12 +1009,20 @@ bool term_prime(parser_T* parser)
             return true;
     }
 
-    if (!factor(parser))
+    Symbol rhs;
+
+    if (!factor(parser, &rhs))
     {
         return false;
     }
 
-    if (!term_prime(parser))
+    // Type checking to convert type for * / operation
+    if (!arithmetic_type_checking(tm, &rhs))
+    {
+        return false;
+    }
+
+    if (!term_prime(parser, tm))
     {
         return false;
     }
@@ -853,11 +1040,11 @@ bool term_prime(parser_T* parser)
  *    | true
  *    | false
  */
-bool factor(parser_T* parser)
+bool factor(parser_T* parser, Symbol* fac)
 {
     if (parser_eat(parser, T_LPAREN))
     {
-        if (!expression(parser))
+        if (!expression(parser, fac))
         {
             return false;
         }
@@ -868,17 +1055,17 @@ bool factor(parser_T* parser)
         }
         return true;
     }
-    else if (procedure_call_or_name_handler(parser))
+    else if (procedure_call_or_name_handler(parser, fac))
     {
         return true;
     }
     else if (parser_eat(parser, T_MINUS))
     {
-        if (name(parser))
+        if (name(parser, fac))
         {
             return true;
         }
-        else if (number(parser))
+        else if (number(parser, fac))
         {
             return true;
         }
@@ -887,20 +1074,24 @@ bool factor(parser_T* parser)
             return false;
         }
     }
-    else if (number(parser))
+    else if (number(parser, fac))
     {
         return true;
     }
-    else if (string(parser))
+    else if (string(parser, fac))
     {
         return true;
     }
     else if (parser_eat(parser, K_TRUE))
     {
+        fac->ttype = K_TRUE;
+        fac->type = TC_BOOL;
         return true;
     }
     else if (parser_eat(parser, K_FALSE))
     {
+        fac->ttype = K_FALSE;
+        fac->type = TC_BOOL;
         return true;
     }
     else {
@@ -916,12 +1107,21 @@ bool factor(parser_T* parser)
  * 
  * <name> ::= <identifier> [ [ <expression> ] ]
  */
-bool procedure_call_or_name_handler(parser_T* parser)
+bool procedure_call_or_name_handler(parser_T* parser, Symbol* id)
 {
-    if (!identifier(parser))
+    if (!identifier(parser, id))
     {
         return false;
     }
+
+    // Check if identifier is defined in local or global scope
+    if (!has_current_symbol(parser->sem, id->id))
+    {
+        printf("Identifier \'%s\' is not declared in local or global scope.\n", id->id);
+        return false;
+    }
+    // Get Identifier
+    *id = get_current_symbol(parser->sem, id->id);
 
     switch (parser->look_ahead->type)
     {
@@ -929,15 +1129,16 @@ bool procedure_call_or_name_handler(parser_T* parser)
             parser_eat(parser, T_LPAREN);
 
             // Optional arguments
-            argument_list(parser);
+            argument_list(parser, id);
 
             if (!parser_eat(parser, T_RPAREN))
             {
+                printf("Missing \')\' in procedure call.\n");
                 return false;
             }
         default:
             // Optional array index
-            if (!array_index(parser))
+            if (!array_index(parser, id))
             {
                 return false;
             }
@@ -949,14 +1150,24 @@ bool procedure_call_or_name_handler(parser_T* parser)
 /*
  * <name> ::= <identifier> [ [ <expression> ] ]
  */
-bool name(parser_T* parser)
+bool name(parser_T* parser, Symbol* id)
 {
-    if (!identifier(parser))
+    if (!identifier(parser, id))
     {
         return false;
     }
 
-    if (!array_index(parser))
+    // Check if identifier is in local or global scope
+    if (!has_current_symbol(parser->sem, id->id))
+    {
+        printf("Identifier \'%s\' is not declared in local or global scope.\n", id->id);
+        return false;
+    }
+
+    // Get Id
+    *id = get_current_symbol(parser->sem, id->id);
+
+    if (!array_index(parser, id))
     {
         return false;
     }
@@ -966,17 +1177,33 @@ bool name(parser_T* parser)
 /*
  * Handler for array index [ [ <expression> ] ]
  */
-bool array_index(parser_T* parser)
+bool array_index(parser_T* parser, Symbol* id)
 {
     if (parser_eat(parser, T_LBRACKET))
     {
-        if (!expression(parser))
+        Symbol exp;
+        if (!expression(parser, &exp))
         {
             return false;
         }
 
+        // Check valid array access
+        if (!id->is_arr)
+        {
+            printf("Identifier \'%s\' is not an array. Invalid array access.\n", id->id);
+            return false;
+        }
+        else if (exp.type != TC_INT)
+        {
+            printf("Array index must be integer.\n");
+            return false;
+        }
+
+        id->is_indexed = true;
+
         if (!parser_eat(parser, T_RBRACKET))
         {
+            printf("Missing \']\' in array index access.\n");
             return false;
         }
     }
@@ -988,36 +1215,93 @@ bool array_index(parser_T* parser)
  *      <expression>, <argument_list>
  *    | <expression>
  */
-bool argument_list(parser_T* parser)
+bool argument_list(parser_T* parser, Symbol* id)
 {
-    if (!expression(parser))
+    Symbol arg;
+    int arg_index = 0;
+
+    if (!expression(parser, &arg))
+    {
+        if (arg_index != params_size(id))
+        {
+            printf("Too few arguments provided for \'%s\'.\n", id->id);
+        }
+        return false;
+    }
+
+    // Grab parameter symbol at corresponding index
+    Symbol sym = get_nth_param(id, arg_index);
+
+    // Check for too much parameters 
+    if (arg_index >= params_size(id))
+    {
+        printf("Too many arguments provivded to \'%s\'.\n", id->id);
+        return false;
+    }
+    // Type checking match parameter type
+    else if (!type_checking(&sym, &arg))
     {
         return false;
     }
 
+    // Increment count
+    arg_index++;
+    
+
     // Optional arguments
     while (is_token_type(parser, T_COMMA))
     {
+        arg = *init_symbol();
         parser_eat(parser, T_COMMA);
-        if (!expression(parser))
+        if (!expression(parser, &arg))
+        {
+            printf("Invalid argument.\n");
+            return false;
+        }
+
+        // Grab parameter symbol at corresponding index
+        sym = get_nth_param(id, arg_index);
+
+        // Check for too much parameters 
+        if (arg_index >= params_size(id))
+        {
+            printf("Too many arguments provivded to \'%s\'.\n", id->id);
+            return false;
+        }
+        // Type checking match parameter type
+        else if (!type_checking(&sym, &arg))
         {
             return false;
         }
+
+        // Increment count
+        arg_index++;
     }
+
+    // Check number of params
+    if (arg_index != params_size(id)) {
+        printf("Too many arguments provivded to \'%s\'.\n", id->id);
+        return false;
+    }
+
     return true;
 }
 
 /*
  * <number> ::= [0-9][0-9_]*[.[0-9_]*]
  */
-bool number(parser_T* parser)
+bool number(parser_T* parser, Symbol* num)
 {
     if (is_token_type(parser, T_NUMBER_INT))
     {
+        num->type = TC_INT;
+        num->ttype = T_NUMBER_INT;
         return parser_eat(parser, T_NUMBER_INT);
     }
     else if (is_token_type(parser, T_NUMBER_FLOAT))
     {
+        num->type = TC_FLOAT;
+        num->ttype = T_NUMBER_FLOAT;
         return parser_eat(parser, T_NUMBER_FLOAT);
     }
     else {
@@ -1028,8 +1312,15 @@ bool number(parser_T* parser)
 /*
  * <string> :: = "[^"]*"
  */
-bool string(parser_T* parser)
+bool string(parser_T* parser, Symbol* str)
 {
+    if (is_token_type(parser, T_STRING))
+    {
+        str->id = parser->look_ahead->value.stringVal;
+        str->ttype = parser->look_ahead->type;
+        str->type = TC_STRING;
+    }
+    // Eat token
     return parser_eat(parser, T_STRING);
 }
 
@@ -1063,3 +1354,230 @@ bool statement_list(parser_T* parser)
     return true;
 }
 
+/*
+ * Type checking for relational operators < <= > >= == !=
+ */
+bool relation_type_checking(Symbol* lhs, Symbol* rhs, Token* op)
+{
+    bool compatible = false;
+
+    // Convert integer to float or bool for comparision
+
+    if (lhs->type == TC_INT)
+    {
+        if (rhs->type == TC_BOOL)
+        {
+            compatible = true;
+            // Convert to boolean
+            lhs->type = TC_BOOL;
+        }
+        else if (rhs->type == TC_FLOAT)
+        {
+            compatible = true;
+            //Convert to float
+            lhs->type = TC_FLOAT;
+        }
+        else if (rhs->type == TC_INT)
+        {
+            // Nothing changes, compatible
+            compatible = true;
+        }
+    }
+    else if (lhs->type == TC_FLOAT)
+    {
+        if (rhs->type == TC_FLOAT)
+        {
+            // Do nothing
+            compatible = true;
+        }
+        else if (rhs->type == TC_INT)
+        {
+            compatible = true;
+            // Convert to float
+            rhs->type = TC_FLOAT;
+        }
+    }
+    else if (lhs->type == TC_BOOL)
+    {
+        if (rhs->type == TC_BOOL)
+        {
+            // Do nothing
+            compatible = true;
+        }
+        else if (rhs->type == TC_INT)
+        {
+            compatible = true;
+            // Convert to bool
+            rhs->type = TC_BOOL;
+        }
+    }
+    else if (lhs->type == TC_STRING)
+    {
+        // Only == != operations are performed on string type
+        if (rhs->type == TC_STRING && (op->type == T_EQ || op->type == T_NOT_EQ))
+        {
+            compatible = true;
+        }
+    }
+
+    if (!compatible)
+    {
+        printf("Types are not compatible for relational operations.\n");
+    }
+    return compatible;
+}
+
+/*
+ * Type checkign for arithmetic operators + - * /
+ */
+bool arithmetic_type_checking(Symbol* lhs, Symbol* rhs)
+{
+    if ((lhs->type != TC_INT && lhs->type != TC_FLOAT) || (rhs->type != TC_INT && rhs->type != TC_FLOAT))
+    {
+        printf("Arithmetic operators are only for int and float.\n");
+        return false;
+    }
+
+    if (lhs->type == TC_INT)
+    {
+        if (rhs->type == TC_FLOAT)
+        {
+            // Convert lhs to float
+            lhs->type = TC_FLOAT;
+        }
+
+        // Don't match otherwise
+    }
+    else
+    {
+        // lhs is float
+        if (rhs->type == TC_INT)
+        {
+            // Convert rhs to float
+            rhs->type = TC_FLOAT;
+        }
+        // Don't match otherwise
+    }
+    return true;
+}
+
+/*
+ * Type checking for expression operators & |
+ */
+bool expression_type_checking(Symbol* lhs, Symbol* rhs)
+{
+    bool compatible = false;
+
+    if (lhs->type == TC_BOOL && rhs->type == TC_BOOL)
+    {
+        compatible = true;
+    }
+    else if (lhs->type == TC_INT && rhs->type == TC_INT)
+    {
+        compatible = true;
+    }
+
+    if (!compatible)
+    {
+        printf("Expression operators are defined for bool and int only.\n");
+    }
+    return compatible;
+}
+
+/*
+ * Type checking for assignment operator
+ * making destination and return type matches.
+ * Also, matching parameters to arguments 
+ */
+
+bool type_checking(Symbol* dest, Symbol* exp)
+{
+    bool compatible = false;
+
+    if (dest->type == exp->type)
+    {
+        compatible = true;
+    }
+    else if (dest->type == TC_INT)
+    {
+        if (exp->type == TC_BOOL)
+        {
+            compatible = true;
+            exp->type = TC_INT;
+        }
+        else if (exp->type == TC_FLOAT)
+        {
+            compatible = true;
+            exp->type = TC_INT;
+        }
+    }
+    else if (dest->type == TC_FLOAT)
+    {
+        if (exp->type == TC_INT)
+        {
+            compatible = true;
+            exp->type = TC_FLOAT;
+        }
+    }
+    else if (dest->type == TC_BOOL)
+    {
+        if (exp->type == TC_INT)
+        {
+            compatible = true;
+            exp->type = TC_BOOL;
+        }
+    }
+
+    if (!compatible)
+    {
+        printf(                                        \
+            "Incompatible types \'%s\' and \'%s\'.\n", \
+            print_type_class(dest->type),              \
+            print_type_class(exp->type)                \
+        );                                             \
+    }
+
+    /*
+     * Check valid matching of array and array index
+     * Valid check:
+     * var = var
+     * arr = arr
+     * arr[i] = arr[i]
+     * arr[i] = var
+     * var = arr[i]
+     */
+    if (dest->is_arr || exp->is_arr)
+    {
+        if (dest->is_arr && exp->is_arr)
+        {
+            // In case both are array type
+
+            if (dest->is_indexed != exp->is_indexed)
+            {
+                printf("Incompatible index match of arrays.\n");
+                compatible = false;
+            }
+            else if (!dest->is_indexed)
+            {
+                // Both are unindexed. Array lengths must match
+                if (dest->arr_size != exp->arr_size)
+                {
+                    printf("Array lengths must match.\n");
+                    compatible = false;
+                }
+            }
+        }
+        else
+        {
+            // One side is array
+            // Array must be indexed
+            if ((dest->is_arr && !dest->is_indexed) || (exp->is_arr && !exp->is_indexed))
+            {
+                printf("Array is not indexed.\n");
+                compatible = false;
+            }
+        }
+    }
+
+    return compatible;
+}

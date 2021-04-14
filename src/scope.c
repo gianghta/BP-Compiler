@@ -29,6 +29,21 @@ void set_symbol(Scope* scope, char* s, Symbol sym)
     HASH_ADD_STR(scope->table, id, new_symbol);
 }
 
+void update_symbol(Scope* scope, char* s, Symbol sym)
+{
+    SymbolTable* new_symbol = NULL;
+    SymbolTable* tmp;
+
+    new_symbol = calloc(1, sizeof(SymbolTable));
+    strcpy(new_symbol->id, s);
+    new_symbol->entry = sym;
+    HASH_REPLACE_STR(scope->table, id, new_symbol, tmp);
+    if (tmp != NULL)
+    {
+        free(tmp);
+    }
+}
+
 Symbol get_symbol(Scope* scope, char* id)
 {
     if (has_symbol(scope, id))
