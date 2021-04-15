@@ -89,7 +89,8 @@ bool program_header(parser_T* parser)
 {
     parser_eat(parser, K_PROGRAM);
 
-    Symbol *id = calloc(1, sizeof(Symbol));
+    Symbol *id = init_symbol();
+    id->stype = ST_VARIABLE;
 
     if (!identifier(parser, id))
     {
@@ -161,13 +162,12 @@ bool program_body(parser_T* parser)
  */
 bool declaration(parser_T* parser)
 {   
-    Symbol *decl = calloc(1, sizeof(Symbol));
-    decl->is_global = is_token_type(parser, K_GLOBAL);
+    Symbol *decl = init_symbol();
 
     bool state;
     if (is_token_type(parser, K_GLOBAL))
     {
-        parser_eat(parser, K_GLOBAL);
+        decl->is_global = parser_eat(parser, K_GLOBAL);
     }
 
     switch (parser->look_ahead->type)
@@ -181,6 +181,9 @@ bool declaration(parser_T* parser)
         default:
             state = false;
     }
+
+    free(decl);
+
     return state;
 }
 
@@ -214,8 +217,21 @@ bool procedure_declaration(parser_T* parser, Symbol* decl)
         return false;
     }
 
-    print_scope(parser->sem, decl->is_global);
     exit_current_scope(parser->sem);
+
+    // If global, already added to global table
+    if (!decl->is_global)
+    {
+        // Error for duplicate name in local scope outside the function
+        if (has_current_global_symbol(parser->sem, decl->id, decl->is_global))
+        {
+            printf("Procedure name \'%s\' is already used in this scope.\n", decl->id);
+            return false;
+        }
+
+        // Set in local scope outside the function
+        set_symbol_semantic(parser->sem, decl->id, *decl, decl->is_global);
+    }
 
     return true;
 }
@@ -270,7 +286,7 @@ bool procedure_header(parser_T* parser, Symbol* decl)
  */
 bool parameter_list(parser_T* parser, Symbol* decl)
 {   
-    Symbol param;
+    Symbol param = *init_symbol();
     if (!parameter(parser, &param))
     {
         return false;
@@ -278,6 +294,7 @@ bool parameter_list(parser_T* parser, Symbol* decl)
     
     if (decl->params == NULL)
     {
+        decl->params = calloc(1, sizeof(SymbolNode));
         decl->params->symbol = param;
         decl->params->next_symbol = NULL;
     }
@@ -417,6 +434,7 @@ bool variable_declaration(parser_T* parser, Symbol* decl)
     // Optional array type
     if (is_token_type(parser, T_LBRACKET))
     {
+        printf("Parsing optional variable array.\n");
         parser_eat(parser, T_LBRACKET);
         if (!bound(parser, decl))
         {
@@ -425,10 +443,6 @@ bool variable_declaration(parser_T* parser, Symbol* decl)
 
         decl->is_arr = true;
 
-        if (!is_token_type(parser, T_RBRACKET))
-        {
-            return false;
-        }
         parser_eat(parser, T_RBRACKET);
     }
 
@@ -472,13 +486,13 @@ bool type_mark(parser_T* parser, Symbol* id)
  */
 bool bound(parser_T* parser, Symbol* id)
 {
-    Symbol num;
+    Symbol* num = init_symbol();
     int tmp = parser->look_ahead->value.intVal;
 
-    if (number(parser, &num) && num.type == T_NUMBER_INT)
+    if (number(parser, num) && num->type == TC_INT)
     {
         id->arr_size = tmp;
-        return parser_eat(parser, T_NUMBER_INT);
+        return true;
     }
     else
     {
@@ -518,7 +532,9 @@ bool statement(parser_T* parser)
  */
 bool assignment_statement(parser_T* parser)
 {
-    Symbol dest, exp;
+    Symbol dest = *init_symbol();
+    Symbol exp = *init_symbol();
+
     if (!destination(parser, &dest))
     {
         return false;
@@ -554,7 +570,7 @@ bool destination(parser_T* parser, Symbol* id)
     }
 
     // Check if identifier is in local or global scope
-    if (has_current_symbol(parser->sem, id->id))
+    if (!has_current_symbol(parser->sem, id->id))
     {
         printf("\'%s\' is not declared in scope.\n", id->id);
         return false;
@@ -588,7 +604,7 @@ bool if_statement(parser_T* parser)
         return false;
     }
 
-    Symbol exp;
+    Symbol exp = *init_symbol();
 
     if (!expression(parser, &exp))
     {
@@ -670,7 +686,7 @@ bool loop_statement(parser_T* parser)
         return false;
     }
 
-    Symbol exp;
+    Symbol exp = *init_symbol();
 
     if (!expression(parser, &exp))
     {
@@ -720,7 +736,7 @@ bool return_statement(parser_T* parser)
         return false;
     }
 
-    Symbol exp;
+    Symbol exp = *init_symbol();
 
     if (!expression(parser, &exp))
     {
@@ -815,7 +831,7 @@ bool expression_prime(parser_T* parser, Symbol* exp)
             return true;
     }
 
-    Symbol rhs;
+    Symbol rhs = *init_symbol();
 
     if (!arith_op(parser, &rhs))
     {
@@ -870,7 +886,7 @@ bool arith_op_prime(parser_T* parser, Symbol* op)
             return true;
     }
 
-    Symbol rhs;
+    Symbol rhs = *init_symbol();
 
     if (!relation(parser, &rhs))
     {
@@ -921,6 +937,8 @@ bool relation(parser_T* parser, Symbol* rel)
  */
 bool relation_prime(parser_T* parser, Symbol* rel)
 {
+    Token op = *parser->look_ahead;
+    
     switch (parser->look_ahead->type)
     {
         case T_LT:
@@ -945,11 +963,10 @@ bool relation_prime(parser_T* parser, Symbol* rel)
             return true;
     }
 
-    Token op = *parser->look_ahead;
-    Symbol rhs;
+    Symbol rhs = *init_symbol();
 
 
-    if (!term(parser,&rhs))
+    if (!term(parser, &rhs))
     {
         return false;
     }
@@ -1009,7 +1026,7 @@ bool term_prime(parser_T* parser, Symbol* tm)
             return true;
     }
 
-    Symbol rhs;
+    Symbol rhs = *init_symbol();
 
     if (!factor(parser, &rhs))
     {
@@ -1181,7 +1198,7 @@ bool array_index(parser_T* parser, Symbol* id)
 {
     if (parser_eat(parser, T_LBRACKET))
     {
-        Symbol exp;
+        Symbol exp = *init_symbol();
         if (!expression(parser, &exp))
         {
             return false;
@@ -1217,7 +1234,7 @@ bool array_index(parser_T* parser, Symbol* id)
  */
 bool argument_list(parser_T* parser, Symbol* id)
 {
-    Symbol arg;
+    Symbol arg = *init_symbol();
     int arg_index = 0;
 
     if (!expression(parser, &arg))

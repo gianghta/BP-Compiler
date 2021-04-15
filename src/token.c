@@ -66,7 +66,7 @@ char* print_token(Token* token)
         case T_RBRACKET:
             return concatf("T_RBRACKET: %s\n", "]");
         case T_EQ:
-            return concatf("T_EQ: %s\n", "=");
+            return concatf("T_EQ: %s\n", "==");
         case T_NOT_EQ:
             return concatf("T_NOT_EQ: %s\n", "!=");
         case T_LT:

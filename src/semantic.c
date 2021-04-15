@@ -31,30 +31,30 @@ Semantic* init_semantic_analyzer()
     set_symbol(sem->global, "false", *init_symbol_with_id_symbol_type("false", K_FALSE, ST_KEYWORD, TC_BOOL));
 
     // Built-in functions
-    set_symbol(sem->global, "getBool", *init_symbol_with_id_symbol_type("getBool", T_ID, ST_PROCEDURE, TC_BOOL));
-    set_symbol(sem->global, "getInteger", *init_symbol_with_id_symbol_type("getInteger", T_ID, ST_PROCEDURE, TC_INT));
-    set_symbol(sem->global, "getFloat", *init_symbol_with_id_symbol_type("getFloat", T_ID, ST_PROCEDURE, TC_FLOAT));
-    set_symbol(sem->global, "getString", *init_symbol_with_id_symbol_type("getString", T_ID, ST_PROCEDURE, TC_STRING));
+    set_symbol(sem->global, "getbool", *init_symbol_with_id_symbol_type("getbool", T_ID, ST_PROCEDURE, TC_BOOL));
+    set_symbol(sem->global, "getinteger", *init_symbol_with_id_symbol_type("getinteger", T_ID, ST_PROCEDURE, TC_INT));
+    set_symbol(sem->global, "getfloat", *init_symbol_with_id_symbol_type("getfloat", T_ID, ST_PROCEDURE, TC_FLOAT));
+    set_symbol(sem->global, "getstring", *init_symbol_with_id_symbol_type("getstring", T_ID, ST_PROCEDURE, TC_STRING));
 
-    tmp = *init_symbol_with_id_symbol_type("putBool", T_ID, ST_PROCEDURE, TC_BOOL);
+    tmp = *init_symbol_with_id_symbol_type("putbool", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_BOOL);
     tmp.params->next_symbol = NULL;
-    set_symbol(sem->global, "putBool", tmp);
+    set_symbol(sem->global, "putbool", tmp);
 
-    tmp = *init_symbol_with_id_symbol_type("putInteger", T_ID, ST_PROCEDURE, TC_BOOL);
+    tmp = *init_symbol_with_id_symbol_type("putinteger", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_INT);
     tmp.params->next_symbol = NULL;
-    set_symbol(sem->global, "putInteger", tmp);
+    set_symbol(sem->global, "putinteger", tmp);
 
-    tmp = *init_symbol_with_id_symbol_type("putFloat", T_ID, ST_PROCEDURE, TC_BOOL);
+    tmp = *init_symbol_with_id_symbol_type("putfloat", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_FLOAT);
     tmp.params->next_symbol = NULL;
-    set_symbol(sem->global, "putFloat", tmp);
+    set_symbol(sem->global, "putfloat", tmp);
 
-    tmp = *init_symbol_with_id_symbol_type("putString", T_ID, ST_PROCEDURE, TC_BOOL);
+    tmp = *init_symbol_with_id_symbol_type("putstring", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_STRING);
     tmp.params->next_symbol = NULL;
-    set_symbol(sem->global, "putString", tmp);
+    set_symbol(sem->global, "putstring", tmp);
 
     tmp = *init_symbol_with_id_symbol_type("sqrt", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_INT);
