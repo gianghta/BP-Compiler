@@ -1,5 +1,7 @@
 CC = clang
-CFLAGS = -g -Wall -I$(INCLUDE)
+LD = clang++
+CFLAGS = -g `llvm-config --cflags` -Wall -I$(INCLUDE)
+LDFLAGS = `llvm-config --cxxflags --ldflags --system-libs --libs core mcjit native executionengine`
 SRC = src
 OBJ = obj
 INCLUDE = src/include
@@ -12,7 +14,7 @@ BIN = $(BINDIR)/bp.out
 all:$(BIN)
 
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@
+	$(LD) $(LDFLAGS) $(OBJS) -o $@
 
 $(OBJ)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@

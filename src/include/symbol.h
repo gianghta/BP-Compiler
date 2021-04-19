@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <llvm-c/Core.h>
 
 #include "token.h"
 
@@ -47,6 +48,12 @@ typedef struct Symbol {
     bool is_indexed;
     bool is_not_empty;
     struct SymbolNode* params;
+
+    // LLVM Values
+    LLVMValueRef llvm_value;
+    LLVMValueRef llvm_function;
+    LLVMValueRef llvm_address;
+
 } Symbol;
 
 /*

@@ -93,6 +93,9 @@ void free_symbol(Symbol* sym)
         {
             free_params_list(sym->params);
         }
+        free(sym->llvm_address);
+        free(sym->llvm_function);
+        free(sym->llvm_value);
         free(sym);
         sym = NULL;
     }

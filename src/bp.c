@@ -14,13 +14,8 @@ void bp_compile(char* src)
     Semantic* sem = init_semantic_analyzer();
     lexer_T* lexer = init_lexer(src, sem);
     parser_T* parser = init_parser(lexer, sem);
-    
-    printf("\nStart parsing....\n");
-    bool status = parse(parser);
 
-    printf("Parse result is: %s\n", status ? "true" : "false");
-    printf("\nPrinting global symbol table:\n");
-    print_scope(sem, true);
+    outputAssembly(parser);
 
     // Cleanup
     free(lexer);

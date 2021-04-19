@@ -1,5 +1,10 @@
 #include "include/parser.h"
 
+LLVMBuilderRef llvm_builder;
+LLVMModuleRef llvm_module;
+LLVMExecutionEngineRef llvm_engine;
+LLVMValueRef main_func;
+
 /*
  * Parser constructor
  */
@@ -10,6 +15,10 @@ parser_T* init_parser(lexer_T* lexer, Semantic* sem)
     parser->sem = sem;
     parser->current_token = (void*) 0;
     parser->look_ahead = lexer_get_next_token(lexer);
+
+    // Create LLVM module with program identifier
+    llvm_module = LLVMModuleCreateWithName("test program");
+    llvm_builder = LLVMCreateBuilder();
     return parser;
 }
 
@@ -54,6 +63,50 @@ bool is_token_type(parser_T* parser, TokenType type)
     }
 }
 
+bool outputAssembly(parser_T* parser)
+{
+    printf("\nStart parsing....\n");
+    bool status = parse(parser);
+
+    printf("Parse result is: %s\n", status ? "true" : "false");
+    printf("\nPrinting global symbol table:\n");
+    print_scope(parser->sem, true);
+
+    char *error = NULL;
+    LLVMVerifyModule(llvm_module, LLVMAbortProcessAction, &error);
+    if (error) {
+        if (*error)
+        {
+            printf("Module verification failed:\n%s", error);
+        }
+        LLVMDisposeMessage(error);
+        return false;
+    }
+
+    // Initialize target registery
+    LLVMLinkInMCJIT();
+    LLVMInitializeNativeTarget();
+    LLVMInitializeNativeAsmParser();
+    LLVMInitializeNativeAsmPrinter();
+
+    if (LLVMCreateExecutionEngineForModule(&llvm_engine, llvm_module, &error) != 0) {
+        fprintf(stderr, "failed to create execution engine\n");
+        abort();
+    }
+
+    LLVMDumpModule(llvm_module);
+    // Write out bitcode to file
+    if (LLVMWriteBitcodeToFile(llvm_module, "bin/a.bc") != 0) {
+        fprintf(stderr, "error writing bitcode to file, skipping\n");
+        return false;
+    }
+
+    LLVMRemoveModule(llvm_engine, llvm_module, &llvm_module, &error);
+    LLVMDisposeBuilder(llvm_builder);
+    LLVMDisposeExecutionEngine(llvm_engine);
+    return true;
+}
+
 // Holy entry point
 bool parse(parser_T* parser)
 {
@@ -70,12 +123,25 @@ bool program(parser_T* parser)
         return false;
     }
 
+    // Main entry code block
+    LLVMTypeRef main_func_type = LLVMFunctionType(LLVMVoidType(), NULL, 0, false);
+    main_func = LLVMAddFunction(llvm_module, "main", main_func_type);
+    LLVMBasicBlockRef main_entry = LLVMAppendBasicBlock(main_func, "main_entry");
+    LLVMPositionBuilderAtEnd(llvm_builder, main_entry);
+
+    Symbol s = *init_symbol_with_id_symbol_type("main", T_ID, ST_PROCEDURE, TC_INT);
+    s.llvm_function = main_func;
+    set_current_procedure(parser->sem, s);
+
     if (!program_body(parser))
     {
         return false;
     }
-
+    
     if (parser->look_ahead->type == T_EOF) parser_eat(parser, T_EOF);
+
+    // End main function, return 0
+    LLVMBuildRetVoid(llvm_builder);
 
     exit_current_scope(parser->sem);
 
@@ -96,6 +162,9 @@ bool program_header(parser_T* parser)
     {
         return false;
     }
+
+    // After module created, add runtime functions
+    insert_runtime_functions(parser->sem);
 
     if (has_current_global_symbol(parser->sem, id->id, true))
     {
@@ -132,6 +201,12 @@ bool program_body(parser_T* parser)
         return false;
     }
 
+    LLVMValueRef func = get_current_procedure(parser->sem).llvm_function;
+
+    // Set main entrypoint
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
+    LLVMInsertExistingBasicBlockAfterInsertBlock(llvm_builder, entry);
+
     if (!statement_list(parser))
     {
         return false;
@@ -143,11 +218,6 @@ bool program_body(parser_T* parser)
     }
 
     if (!parser_eat(parser, K_PROGRAM))
-    {
-        return false;
-    }
-
-    if (!parser_eat(parser, T_EOF))
     {
         return false;
     }
@@ -205,6 +275,41 @@ bool procedure_declaration(parser_T* parser, Symbol* decl)
         printf("Procedure name %s is already used in current scope.\n", decl->id);
         return false;
     }
+
+    // Function codegen
+    int param_cnt = params_size(decl);
+    int counter = 0;
+    LLVMTypeRef param_types[param_cnt];
+    
+    SymbolNode *tmp;
+    tmp = decl->params;
+    while (tmp != NULL && counter < param_cnt)
+    {
+        param_types[counter] = create_llvm_type(tmp->symbol.type);
+        
+        if (tmp->symbol.is_arr)
+        {
+            param_types[counter] = LLVMArrayType(create_llvm_type(tmp->symbol.type), params_size(&tmp->symbol));
+        }
+        tmp = tmp->next_symbol;
+        counter += 1;
+    }
+
+    LLVMTypeRef ft = LLVMFunctionType(create_llvm_type(decl->type), param_types, param_cnt, false);
+    LLVMValueRef func = LLVMAddFunction(llvm_module, decl->id, ft);
+
+    // Set param names
+    tmp = decl->params;
+    LLVMValueRef current_param = LLVMGetFirstParam(func);
+    while (tmp != NULL)
+    {
+        Symbol current_entry = tmp->symbol;
+        LLVMSetValueName2(current_param, current_entry.id, strlen(current_entry.id));
+        current_param = LLVMGetNextParam(current_param);
+        tmp = tmp->next_symbol;
+    }
+
+    decl->llvm_function = func;
 
     // Set symbol in current scope
     set_symbol_semantic(parser->sem, decl->id, *decl, decl->is_global);
@@ -291,10 +396,9 @@ bool parameter_list(parser_T* parser, Symbol* decl)
     {
         return false;
     }
-    
-    if (decl->params == NULL)
+
+    if (decl->params->symbol.id == NULL)
     {
-        decl->params = calloc(1, sizeof(SymbolNode));
         decl->params->symbol = param;
         decl->params->next_symbol = NULL;
     }
@@ -326,7 +430,7 @@ bool parameter_list(parser_T* parser, Symbol* decl)
             return false;
         }
 
-        if (decl->params == NULL)
+        if (decl->params->symbol.id == NULL)
         {
             decl->params->symbol = param;
             decl->params->next_symbol = NULL;
@@ -379,6 +483,83 @@ bool procedure_body(parser_T* parser)
         return false;
     }
 
+    Symbol current_proc = get_current_procedure(parser->sem);
+    LLVMValueRef func = current_proc.llvm_function;
+    // Set entrypoint
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
+    LLVMPositionBuilderAtEnd(llvm_builder, entry);
+    
+    printf("Current symbol table of procedure %s scope is: \n", current_proc.id);
+    print_symbol_table(parser->sem->current_local);
+
+    // Allocate address for parameters and variable in current symbol table
+    SymbolTable* current_symbol;
+
+    unsigned int num_symbols = symbol_table_size(parser->sem->current_local->table);
+    int counter = 0;
+
+    for (current_symbol = parser->sem->current_local->table; current_symbol != NULL; current_symbol = current_symbol->hh.next)
+    {
+        if (counter == num_symbols)
+        {
+            break;
+        }
+
+        Symbol current_entry = current_symbol->entry;
+        printf("Current entry is: %s\n", current_entry.id);
+        if (current_entry.stype != ST_VARIABLE)
+        {
+            continue;
+        }
+
+        LLVMTypeRef ty = create_llvm_type(current_entry.type);
+        if (current_entry.is_arr)
+        {
+            ty = LLVMArrayType(create_llvm_type(current_entry.type), params_size(&current_entry));
+        }
+
+        current_entry.llvm_address = LLVMBuildAlloca(llvm_builder, ty, current_entry.id);
+        update_symbol_semantic_global(parser->sem, current_entry, current_entry.is_global);
+        counter += 1;
+    }
+
+    // Store argument values in allocated addresses
+    SymbolNode* tmp = current_proc.params;
+    LLVMValueRef current_param = LLVMGetFirstParam(func);
+    while (tmp != NULL)
+    {
+        // Get current symbol from local table since
+        // parameter linked list is not up to date with symbol table
+        Symbol param = get_current_symbol(parser->sem, tmp->symbol.id);
+
+        // Store parameter value in address
+        if (param.is_arr)
+        {
+            // Create a dummy symbol to pass
+            // Type must be same as param,
+            // otherwise it would've failed in type_checking
+            Symbol tmp_param_val = *init_symbol_with_id_symbol_type("", T_ID, ST_VARIABLE, param.type);
+            tmp_param_val.llvm_address = current_param;
+            // current_param is an llvm_address to the array;
+
+            // Loop through each index and copy values from
+            // argument to parameter (local) array
+            array_assignment_codegen(parser, &param, &tmp_param_val);
+        }
+        else
+        {
+            // current_param is a normal llvm_value
+            LLVMBuildStore(llvm_builder, current_param, param.llvm_address);
+
+            // Update symbol
+            param.llvm_value = current_param;
+            update_symbol_semantic_global(parser->sem, param, param.is_global);
+        }
+        current_param = LLVMGetNextParam(current_param);
+        tmp = tmp->next_symbol;
+    }
+
+
     if (!statement_list(parser))
     {
         return false;
@@ -393,6 +574,17 @@ bool procedure_body(parser_T* parser)
     {
         return false;
     }
+
+    LLVMBuildRet(llvm_builder, func);
+    LLVMPositionBuilderAtEnd(llvm_builder, LLVMGetLastBasicBlock(main_func));
+
+    // Verify that function has a return value
+    // bool invalid = LLVMVerifyFunction(func, LLVMReturnStatusAction);
+    // if (invalid)
+    // {
+    //     printf("Function does not have a return value.\n");
+    //     return false;
+    // }
     return true;
 }
 
@@ -444,6 +636,19 @@ bool variable_declaration(parser_T* parser, Symbol* decl)
         decl->is_arr = true;
 
         parser_eat(parser, T_RBRACKET);
+    }
+
+    // Global variable allocation
+    if (decl->is_global)
+    {
+        LLVMTypeRef ty = create_llvm_type(decl->type);
+        if (decl->is_arr)
+        {
+            ty = LLVMArrayType(ty, decl->arr_size);
+        }
+
+        LLVMValueRef address = LLVMAddGlobal(llvm_module, ty, decl->id);
+        decl->llvm_address = address;
     }
 
     // Set symbol to current scope
@@ -1501,6 +1706,47 @@ bool expression_type_checking(Symbol* lhs, Symbol* rhs)
     return compatible;
 }
 
+// Codegen to copy the elements from one array to another
+void array_assignment_codegen(parser_T* parser, Symbol* dest, Symbol* exp)
+{
+    LLVMValueRef func = get_current_procedure(parser->sem).llvm_function;
+
+    LLVMBasicBlockRef arr_copy_block = LLVMAppendBasicBlock(func, "arrCopy");
+    LLVMBasicBlockRef arr_copy_merge_block = LLVMAppendBasicBlock(func, "arrCopyMerge");
+
+    // Initial index = 0
+    LLVMValueRef ind_addr = LLVMBuildAlloca(llvm_builder, create_llvm_type(TC_INT), "arrCopyInd");
+    LLVMValueRef zero_val = LLVMConstInt(LLVMInt32Type(), 0, true);
+    LLVMValueRef index = zero_val;
+    LLVMBuildStore(llvm_builder, index, ind_addr);
+
+    // Max value of index is arr_size - 1
+    LLVMValueRef loop_end = LLVMConstInt(LLVMInt32Type(), dest->arr_size, true);
+    LLVMBuildBr(llvm_builder, arr_copy_block);
+    LLVMInsertExistingBasicBlockAfterInsertBlock(llvm_builder, arr_copy_block);
+
+    index = LLVMBuildLoad2(llvm_builder, create_llvm_type(TC_INT), ind_addr, "");
+
+    // Get pointer to array element, and load the value
+    LLVMValueRef exp_elem_addr = LLVMBuildInBoundsGEP(llvm_builder, exp->llvm_address, &zero_val, (int) index, "");
+    LLVMValueRef exp_elem_val = LLVMBuildLoad2(llvm_builder, create_llvm_type(dest->type), exp_elem_addr, "");
+
+    // Get pointer to dest array element, and store the value
+    LLVMValueRef dest_elem_addr = LLVMBuildInBoundsGEP(llvm_builder, dest->llvm_address, &zero_val, (int) index, "");
+    LLVMBuildStore(llvm_builder, exp_elem_val, dest_elem_addr);
+
+    // Increment index
+    LLVMValueRef increment = LLVMConstInt(LLVMInt32Type(), 1, true);
+    index = LLVMBuildAdd(llvm_builder, index, increment, "");
+    LLVMBuildStore(llvm_builder, index, ind_addr);
+
+    // index < arr size
+    LLVMValueRef cond = LLVMBuildICmp(llvm_builder, LLVMIntSLT, index, loop_end, "");
+    LLVMBuildCondBr(llvm_builder, cond, arr_copy_block, arr_copy_merge_block);
+
+    LLVMInsertExistingBasicBlockAfterInsertBlock(llvm_builder, arr_copy_merge_block);
+}
+
 /*
  * Type checking for assignment operator
  * making destination and return type matches.
@@ -1510,49 +1756,6 @@ bool expression_type_checking(Symbol* lhs, Symbol* rhs)
 bool type_checking(Symbol* dest, Symbol* exp)
 {
     bool compatible = false;
-
-    if (dest->type == exp->type)
-    {
-        compatible = true;
-    }
-    else if (dest->type == TC_INT)
-    {
-        if (exp->type == TC_BOOL)
-        {
-            compatible = true;
-            exp->type = TC_INT;
-        }
-        else if (exp->type == TC_FLOAT)
-        {
-            compatible = true;
-            exp->type = TC_INT;
-        }
-    }
-    else if (dest->type == TC_FLOAT)
-    {
-        if (exp->type == TC_INT)
-        {
-            compatible = true;
-            exp->type = TC_FLOAT;
-        }
-    }
-    else if (dest->type == TC_BOOL)
-    {
-        if (exp->type == TC_INT)
-        {
-            compatible = true;
-            exp->type = TC_BOOL;
-        }
-    }
-
-    if (!compatible)
-    {
-        printf(                                        \
-            "Incompatible types \'%s\' and \'%s\'.\n", \
-            print_type_class(dest->type),              \
-            print_type_class(exp->type)                \
-        );                                             \
-    }
 
     /*
      * Check valid matching of array and array index
@@ -1594,6 +1797,74 @@ bool type_checking(Symbol* dest, Symbol* exp)
                 compatible = false;
             }
         }
+    }
+    // Both are not arrays
+
+
+    if (dest->type == exp->type)
+    {
+        compatible = true;
+    }
+    else if (dest->type == TC_INT)
+    {
+        if (exp->type == TC_BOOL)
+        {
+            compatible = true;
+
+            if (!(exp->is_arr && !exp->is_indexed))
+            {
+                // Convert exp to int
+                exp->type = TC_INT;
+                exp->llvm_value = LLVMConstIntCast(exp->llvm_value, LLVMInt32Type(), false);
+            }
+        }
+        else if (exp->type == TC_FLOAT)
+        {
+            compatible = true;
+            if (!(exp->is_arr && !exp->is_indexed))
+            {
+                // Convert exp to int
+                exp->type = TC_INT;
+                exp->llvm_value = LLVMConstFPToSI(exp->llvm_value, LLVMInt32Type());
+            }
+        }
+    }
+    else if (dest->type == TC_FLOAT)
+    {
+        if (exp->type == TC_INT)
+        {
+            compatible = true;
+
+            if (!(exp->is_arr && !exp->is_indexed))
+            {
+                // Convert exp to float
+                exp->type = TC_FLOAT;
+                exp->llvm_value = LLVMConstSIToFP(exp->llvm_value, LLVMFloatType());
+            }
+        }
+    }
+    else if (dest->type == TC_BOOL)
+    {
+        if (exp->type == TC_INT)
+        {
+            compatible = true;
+
+            if (!exp->is_arr && !exp->is_indexed)
+            {
+                // Convert exp to bool
+                exp->type = TC_BOOL;
+                exp->llvm_value = LLVMConstICmp(LLVMIntNE , exp->llvm_value, LLVMConstInt(LLVMInt32Type(), 0, true));
+            }
+        }
+    }
+
+    if (!compatible)
+    {
+        printf(                                        \
+            "Incompatible types \'%s\' and \'%s\'.\n", \
+            print_type_class(dest->type),              \
+            print_type_class(exp->type)                \
+        );                                             \
     }
 
     return compatible;

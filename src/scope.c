@@ -92,3 +92,10 @@ void free_symbol_table(Scope* scope)
         free(current_symbol);
     }
 }
+
+unsigned int symbol_table_size(SymbolTable* table)
+{
+    unsigned int num_symbols;
+    num_symbols = HASH_COUNT(table);
+    return num_symbols;
+}

@@ -178,8 +178,10 @@ Token* lexer_collect_string(lexer_T* lexer)
     ))
     {
         if (cnt <= MAX_STRING_LENGTH)
+        {
             token->value.stringVal[cnt++] = lexer->current_char;
             lexer_advance(lexer);
+        }
     }
 
     if (cnt > MAX_STRING_LENGTH)

@@ -23,10 +23,16 @@ bool has_current_symbol(Semantic* sem, char* s);
 bool has_current_global_symbol(Semantic* sem, char* s, bool is_global);
 
 void set_current_procedure(Semantic* sem, Symbol proc);
+void update_symbol_semantic_global(Semantic* sem, Symbol sym, bool is_global);
 Symbol get_current_procedure(Semantic* sem);
 
+bool is_current_scope_global(Semantic* sem);
 TokenType check_for_reserved_word(Semantic* sem, char* str);
 
 void print_scope(Semantic* sem, bool is_global);
+
+LLVMTypeRef create_llvm_type(TypeClass entry_type);
+void insert_runtime_functions(Semantic* sem);
+// void create_runtime_functions(Semantic* sem, char* name);
 
 #endif

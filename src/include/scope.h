@@ -24,6 +24,7 @@ void set_symbol(Scope* scope, char* s, Symbol sym);
 void update_symbol(Scope* scope, char* s, Symbol sym);
 Symbol get_symbol(Scope* scope, char* id);
 bool has_symbol(Scope* scope, char* id);
+unsigned int symbol_table_size(SymbolTable* table);
 void print_symbol_table(Scope* scope);
 void free_symbol_table(Scope* scope);
 

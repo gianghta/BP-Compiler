@@ -3,8 +3,21 @@
 #include "lexer.h"
 #include "token.h"
 #include "semantic.h"
+
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+#include <string.h>
+
+#include <llvm-c/Target.h>
+#include <llvm-c/TargetMachine.h>
+#include <llvm-c/ExecutionEngine.h>
+#include <llvm-c/Target.h>
+#include <llvm-c/Transforms/Scalar.h>
+#include <llvm-c/Core.h>
+#include <llvm-c/Analysis.h>
+#include <llvm-c/BitWriter.h>
+
 
 typedef struct PARSER_STRUCT
 {
@@ -69,5 +82,8 @@ bool type_checking(Symbol* dest, Symbol* exp);
 bool expression_type_checking(Symbol* lhs, Symbol* rhs);
 bool arithmetic_type_checking(Symbol* lhs, Symbol* rhs);
 bool relation_type_checking(Symbol* lhs, Symbol* rhs, Token* op);
+
+bool outputAssembly(parser_T* parser);
+void array_assignment_codegen(parser_T* parser, Symbol* dest, Symbol* exp);
 
 #endif
