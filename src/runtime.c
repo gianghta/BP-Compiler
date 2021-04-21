@@ -35,11 +35,6 @@ char* getstring() {
     if ((strlen(s) > 0) && (s[strlen(s) - 1] == '\n')) {
         s[strlen(s) - 1] = '\0';
     }
-    
-    // TODO Prevent memory leak :/
-    // See commits of what I tried: 
-    //      3647f3d5cdb83b9b241a984e497715caa6462185
-    //      c1e315dd653813f6ad9bdf7038f4b028c9a3e54e
     return s;
 }
 
@@ -65,4 +60,9 @@ bool putstring(char* value) {
 
 float _sqrt(int value) {
     return sqrtf((float)value);
+}
+
+void outOfBoundsError() {
+    printf("Error: Index out of bounds\n");
+    exit(1);
 }

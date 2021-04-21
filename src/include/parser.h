@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "token.h"
 #include "semantic.h"
+#include "error.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -61,7 +62,7 @@ bool identifier(parser_T* parser, Symbol* id);
 bool expression(parser_T* parser, Symbol* exp);
 bool expression_prime(parser_T* parser, Symbol* exp);
 bool arith_op(parser_T* parser, Symbol* op);
-bool arith_op_prime(parser_T* parser, Symbol* op);
+bool arith_op_prime(parser_T* parser, Symbol* ar_op);
 bool relation(parser_T* parser, Symbol* rel);
 bool relation_prime(parser_T* parser, Symbol* rel);
 bool term(parser_T* parser, Symbol* tm);
@@ -70,20 +71,24 @@ bool factor(parser_T* parser, Symbol* fac);
 
 bool procedure_call_or_name_handler(parser_T* parser, Symbol* id);
 bool name(parser_T* parser, Symbol* id);
-bool array_index(parser_T* parser, Symbol* id);
-bool argument_list(parser_T* parser, Symbol* id);
+bool array_index(parser_T* parser, Symbol id, Symbol ind);
+LLVMValueRef* argument_list(parser_T* parser, Symbol* id);
 bool number(parser_T* parser, Symbol* num);
 bool string(parser_T* parser, Symbol* str);
 
 bool declaration_list(parser_T* parser);
 bool statement_list(parser_T* parser);
 
-bool type_checking(Symbol* dest, Symbol* exp);
-bool expression_type_checking(Symbol* lhs, Symbol* rhs);
-bool arithmetic_type_checking(Symbol* lhs, Symbol* rhs);
-bool relation_type_checking(Symbol* lhs, Symbol* rhs, Token* op);
+bool type_checking(parser_T* parser, Symbol dest, Symbol exp);
+bool expression_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
+bool arithmetic_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
+bool relation_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
 
 bool outputAssembly(parser_T* parser);
-void array_assignment_codegen(parser_T* parser, Symbol* dest, Symbol* exp);
+LLVMValueRef string_comparison(parser_T* parser, Symbol lhs, Symbol rhs);
+void array_assignment_codegen(parser_T* parser, Symbol dest, Symbol exp);
+bool array_op_type_check(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
+bool name_code_gen(parser_T* parser, Symbol id, Symbol ind);
+bool resync(parser_T* parser, TokenType tokens[], int count);
 
 #endif

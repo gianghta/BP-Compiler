@@ -39,6 +39,7 @@ Semantic* init_semantic_analyzer()
     set_symbol(sem->global, "getinteger", *init_symbol_with_id_symbol_type("getinteger", T_ID, ST_PROCEDURE, TC_INT));
     set_symbol(sem->global, "getfloat", *init_symbol_with_id_symbol_type("getfloat", T_ID, ST_PROCEDURE, TC_FLOAT));
     set_symbol(sem->global, "getstring", *init_symbol_with_id_symbol_type("getstring", T_ID, ST_PROCEDURE, TC_STRING));
+    set_symbol(sem->global, "_outOfBoundsError", *init_symbol_with_id_symbol_type("_outOfBoundsError", T_ID, ST_PROCEDURE, TC_UNKNOWN));
 
     tmp = *init_symbol_with_id_symbol_type("putbool", T_ID, ST_PROCEDURE, TC_BOOL);
     tmp.params->symbol = *init_symbol_with_id_symbol_type("value", T_ID, ST_VARIABLE, TC_BOOL);
@@ -121,17 +122,27 @@ void set_symbol_semantic(Semantic* sem, char* s, Symbol sym, bool is_global)
     }
 }
 
+// Look for exisiting symbol first in local and global scope
+// If doesn't exist, set it
+// If does, update the current one from its scope
 void update_symbol_semantic_global(Semantic* sem, Symbol sym, bool is_global)
 {
     if (sem != NULL)
     {
-        if (is_global)
+        if (!has_current_global_symbol(sem, sym.id, sym.is_global))
         {
-            update_symbol(sem->global, sym.id, sym);
+            set_symbol_semantic(sem, sym.id, sym, sym.is_global);
         }
         else
         {
-            update_symbol(sem->current_local, sym.id, sym);
+            if (is_global)
+            {
+                update_symbol(sem->global, sym.id, sym);
+            }
+            else
+            {
+                update_symbol(sem->current_local, sym.id, sym);
+            }
         }
     }
 }
@@ -162,7 +173,7 @@ Symbol get_current_global_symbol(Semantic* sem, char* s, bool is_global)
     }
     else
     {
-        return get_symbol(sem->current_local, s);
+        return get_current_symbol(sem, s);
     }
 }
 
@@ -236,66 +247,6 @@ TokenType check_for_reserved_word(Semantic* sem, char* str)
     return T_ID;
 }
 
-// void create_runtime_functions(Semantic* sem, char* name)
-// {
-//     Symbol s = get_symbol(sem->global, name);
-//     LLVMTypeRef proc_type;
-//     LLVMValueRef proc;
-//     LLVMTypeRef params[1];
-
-//     // Condition for get functions
-//     if (name[0] == 'g')
-//     {
-//         if (s.type != TC_STRING) // string case is handled separately
-//         {
-//             params[0] = LLVMPointerType(create_type(s.type), 0);
-//         }
-//     }
-
-//     proc_type = LLVMFunctionType(LLVMVoidType(), params, 1, false);
-//     proc = LLVMAddFunction(llvm_module, s.id, proc_type);
-//     LLVMBasicBlockRef proc_entry = LLVMAppendBasicBlock(proc, s.id);
-//     LLVMPositionBuilderAtEnd(llvm_builder, proc_entry);
-
-//     LLVMValueRef value = LLVMGetParam(proc, 0);
-//     LLVMSetValueName(value, "value");
-//     s.params->symbol.llvm_value = value;
-//     s.params->next_symbol = NULL;
-
-//     const char* format_str = "";
-
-//     if (strcmp(name, "putbool") == 0 || strcmp(name, "putinteger") == 0 ||  \
-// 		strcmp(name, "getbool") == 0 || strcmp(name, "getinteger") == 0)
-//     {
-// 	    format_str = "%d";
-//     } else if (strcmp(name, "putfloat") == 0 || strcmp(name, "getfloat") == 0) {
-//         format_str = "%f";
-//     } else if (strcmp(name, "putstring") == 0 || strcmp(name, "getstring") == 0) {
-//         format_str = "%s";
-//     } else if (strcmp(name, "putchar") == 0 || strcmp(name, "getchar") == 0) {
-//         format_str = "%c";
-//     }
-
-//     LLVMValueRef format = LLVMBuildGlobalStringPtr(llvm_builder, format_str, "format_str");
-
-//     if (name[0] == 'p') { // put* functions
-//         LLVMValueRef args[] = { format, s.params->symbol.llvm_value };
-//         LLVMBuildCall(llvm_builder, llvm_printf, args, 2, name);
-//     } else if (name[0] == 'g') { // get* functions
-//         LLVMValueRef args[] = { format, s.params->symbol.llvm_value };
-//         LLVMBuildCall(llvm_builder, llvm_scanf, args, 2, name);
-//     } else {
-//         LLVMValueRef args[] = { s.params->symbol.llvm_value };
-//         LLVMBuildCall(llvm_builder, llvm_sqrtf, args, 2, name);
-//     }
-
-//     s.llvm_function = proc;
-//     set_symbol(sem->global, name, s);
-
-//     LLVMBuildRetVoid(llvm_builder);
-//     LLVMPositionBuilderAtEnd(llvm_builder, LLVMGetLastBasicBlock(main_func));
-// }
-
 LLVMTypeRef create_llvm_type(TypeClass entry_type) {
 	LLVMTypeRef type;
 	switch (entry_type) {
@@ -306,7 +257,7 @@ LLVMTypeRef create_llvm_type(TypeClass entry_type) {
 		case TC_STRING:
 			type = LLVMPointerType(LLVMInt8Type(), 0); break;
 		case TC_BOOL:
-			type = LLVMInt32Type(); break;
+			type = LLVMInt1Type(); break;
 		default:
 			type = LLVMVoidType(); break;
 	}
@@ -348,6 +299,14 @@ void insert_runtime_functions(Semantic* sem)
     str = "getstring";
     s = get_symbol(sem->global, str);
     ft = LLVMFunctionType(LLVMPointerType(LLVMInt8Type(), 0), NULL, 0, false);
+    func = LLVMAddFunction(llvm_module, str, ft);
+    LLVMSetLinkage(func, LLVMExternalLinkage);
+    s.llvm_function = func;
+    update_symbol(sem->global, str, s);
+
+    str = "_outOfBoundsError";
+    s = get_symbol(sem->global, str);
+    ft = LLVMFunctionType(LLVMVoidType(), NULL, 0, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;

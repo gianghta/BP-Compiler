@@ -54,8 +54,9 @@ Symbol get_symbol(Scope* scope, char* id)
     }
     else
     {
-        Symbol* ptr = init_symbol();
-        return *ptr;
+        Symbol ptr = *init_symbol();
+        set_symbol(scope, ptr.id, ptr);
+        return ptr;
     }
 }
 
@@ -80,7 +81,7 @@ void print_symbol_table(Scope* scope)
 
     for (s = scope->table; s != NULL; s = (SymbolTable*)(s->hh.next))
     {
-        printf("Symbol of type %s. symbol id: %s. symbol name: %s\n", print_symbol_type(s->entry.stype), s->id, s->entry.id);
+        printf("Symbol type %s. symbol id: %s. symbol name: %s. symbol is %s\n", print_symbol_type(s->entry.stype), s->id, s->entry.id, print_type_class(s->entry.type));
     }
 }
 

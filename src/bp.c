@@ -15,7 +15,10 @@ void bp_compile(char* src)
     lexer_T* lexer = init_lexer(src, sem);
     parser_T* parser = init_parser(lexer, sem);
 
-    outputAssembly(parser);
+    if(outputAssembly(parser))
+    {
+        printf("Successfully generate code.\n");
+    }
 
     // Cleanup
     free(lexer);

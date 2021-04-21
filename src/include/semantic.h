@@ -33,6 +33,5 @@ void print_scope(Semantic* sem, bool is_global);
 
 LLVMTypeRef create_llvm_type(TypeClass entry_type);
 void insert_runtime_functions(Semantic* sem);
-// void create_runtime_functions(Semantic* sem, char* name);
 
 #endif
