@@ -4,7 +4,6 @@
 #include <string.h>
 #include <ctype.h>
 
-
 lexer_T* init_lexer(char* source, Semantic* sem)
 {
     lexer_T* lexer = calloc(1, sizeof(struct LEXER_STRUCT));

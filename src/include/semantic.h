@@ -31,7 +31,6 @@ TokenType check_for_reserved_word(Semantic* sem, char* str);
 
 void print_scope(Semantic* sem, bool is_global);
 
-LLVMTypeRef create_llvm_type(TypeClass entry_type);
 void insert_runtime_functions(Semantic* sem);
 
 #endif

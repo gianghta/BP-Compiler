@@ -9,13 +9,14 @@
 #include "include/semantic.h"
 
 
-void bp_compile(char* src)
+void bp_compile(char* src, const char* name, bool parser_flag, bool table_flag, bool jit_flag)
 {
+    set_file_name(name);
     Semantic* sem = init_semantic_analyzer();
     lexer_T* lexer = init_lexer(src, sem);
-    parser_T* parser = init_parser(lexer, sem);
+    parser_T* parser = init_parser(lexer, sem, parser_flag, table_flag, jit_flag);
 
-    if(outputAssembly(parser))
+    if(output_bitcode(parser))
     {
         printf("Successfully generate code.\n");
     }
@@ -29,9 +30,9 @@ void bp_compile(char* src)
     sem = NULL;
 }
 
-void bp_compile_file(const char* filename)
+void bp_compile_file(const char* filename, bool parser_flag, bool table_flag, bool jit_flag)
 {
     char* src = bp_read_file(filename);
-    bp_compile(src);
+    bp_compile(src, filename, parser_flag, table_flag, jit_flag);
     free(src);
 }

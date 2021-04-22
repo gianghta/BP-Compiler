@@ -7,7 +7,6 @@
 
 #include "token.h"
 
-
 struct SymbolNode;
 
 /*
@@ -18,6 +17,7 @@ typedef enum TypeClass {
     TC_FLOAT,
     TC_STRING,
     TC_BOOL,
+    TC_VOID,
     TC_UNKNOWN
 } TypeClass;
 
@@ -73,5 +73,7 @@ void free_symbol(Symbol* sym);
 void free_params_list(SymbolNode* head);
 char* print_symbol_type(SymbolType type);
 char* print_type_class(TypeClass type);
+
+LLVMTypeRef create_llvm_type(TypeClass entry_type);
 
 #endif

@@ -1,5 +1,8 @@
 #include "include/symbol.h"
 
+extern LLVMBuilderRef llvm_builder;
+extern LLVMModuleRef llvm_module;
+extern LLVMContextRef llvm_context;
 
 Symbol* init_symbol()
 {
@@ -14,6 +17,9 @@ Symbol* init_symbol()
     sym->is_indexed = false;
     sym->is_not_empty = true;
     sym->params = calloc(1, sizeof(struct SymbolNode));
+    sym->llvm_value = NULL;
+    sym->llvm_address = NULL;
+    sym->llvm_function = NULL;
     return sym;
 }
 
@@ -30,6 +36,9 @@ Symbol* init_symbol_with_id(char* id_name, TokenType token_type)
     sym->is_indexed = false;
     sym->is_not_empty = true;
     sym->params = calloc(1, sizeof(struct SymbolNode));
+    sym->llvm_value = NULL;
+    sym->llvm_address = NULL;
+    sym->llvm_function = NULL;
     return sym;
 }
 Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, SymbolType sym_type, TypeClass type_c)
@@ -45,6 +54,9 @@ Symbol* init_symbol_with_id_symbol_type(char* id_name, TokenType token_type, Sym
     sym->is_indexed = false;
     sym->is_not_empty = true;
     sym->params = calloc(1, sizeof(struct SymbolNode));
+    sym->llvm_value = NULL;
+    sym->llvm_address = NULL;
+    sym->llvm_function = NULL;
     return sym;
 }
 
@@ -76,7 +88,7 @@ int params_size(Symbol* sym)
     int count = 0;
     SymbolNode *ptr = sym->params;
 
-    while (ptr != NULL)
+    while (ptr != NULL && ptr->symbol.is_not_empty)
     {
         ptr = ptr->next_symbol;
         count += 1;
@@ -143,4 +155,24 @@ char* print_type_class(TypeClass type)
         default:
             return concatf("TC_UNKNOWN");
     }
+}
+
+LLVMTypeRef create_llvm_type(TypeClass entry_type) {
+	LLVMTypeRef type;
+	switch (entry_type) {
+		case TC_INT:
+            type = LLVMInt32TypeInContext(llvm_context); break;
+		case TC_FLOAT:
+			type = LLVMFloatTypeInContext(llvm_context); break;
+		case TC_STRING:
+			type = LLVMPointerType(LLVMInt8TypeInContext(llvm_context), 0); break;
+		case TC_BOOL:
+			type = LLVMInt1TypeInContext(llvm_context); break;
+        case TC_VOID:
+            type = LLVMVoidTypeInContext(llvm_context); break;
+		default:
+			printf("Invalid type\n");
+            return NULL;
+	}
+	return type;
 }

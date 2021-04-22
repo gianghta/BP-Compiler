@@ -18,6 +18,8 @@
 #include <llvm-c/Core.h>
 #include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
+#include <llvm-c/IRReader.h>
+
 
 
 typedef struct PARSER_STRUCT
@@ -26,9 +28,12 @@ typedef struct PARSER_STRUCT
     Semantic* sem;
     Token* current_token;
     Token* look_ahead;
+    bool flag;
+    bool table_flag;
+    bool jit_flag;
 } parser_T;
 
-parser_T* init_parser(lexer_T* lexer, Semantic* sem);
+parser_T* init_parser(lexer_T* lexer, Semantic* sem, bool flag, bool table_flag, bool jit_flag);
 bool parser_eat(parser_T* parser, TokenType type);
 
 bool is_token_type(parser_T* parser, TokenType type);
@@ -71,7 +76,7 @@ bool factor(parser_T* parser, Symbol* fac);
 
 bool procedure_call_or_name_handler(parser_T* parser, Symbol* id);
 bool name(parser_T* parser, Symbol* id);
-bool array_index(parser_T* parser, Symbol id, Symbol ind);
+bool array_index(parser_T* parser, Symbol* id, Symbol* ind);
 LLVMValueRef* argument_list(parser_T* parser, Symbol* id);
 bool number(parser_T* parser, Symbol* num);
 bool string(parser_T* parser, Symbol* str);
@@ -79,16 +84,16 @@ bool string(parser_T* parser, Symbol* str);
 bool declaration_list(parser_T* parser);
 bool statement_list(parser_T* parser);
 
-bool type_checking(parser_T* parser, Symbol dest, Symbol exp);
-bool expression_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
-bool arithmetic_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
-bool relation_type_checking(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
+bool type_checking(parser_T* parser, Symbol* dest, Symbol* exp);
+bool expression_type_checking(parser_T* parser, Symbol* lhs, Symbol* rhs, Token* op);
+bool arithmetic_type_checking(parser_T* parser, Symbol* lhs, Symbol* rhs, Token* op);
+bool relation_type_checking(parser_T* parser, Symbol* lhs, Symbol* rhs, Token* op);
 
-bool outputAssembly(parser_T* parser);
-LLVMValueRef string_comparison(parser_T* parser, Symbol lhs, Symbol rhs);
-void array_assignment_codegen(parser_T* parser, Symbol dest, Symbol exp);
-bool array_op_type_check(parser_T* parser, Symbol lhs, Symbol rhs, Token op);
-bool name_code_gen(parser_T* parser, Symbol id, Symbol ind);
+bool output_bitcode(parser_T* parser);
+LLVMValueRef string_comparison(parser_T* parser, Symbol* lhs, Symbol* rhs);
+void array_assignment_codegen(parser_T* parser, Symbol* dest, Symbol* exp);
+bool array_op_type_check(parser_T* parser, Symbol* lhs, Symbol* rhs, Token* op);
+bool name_code_gen(parser_T* parser, Symbol* id, Symbol* ind);
 bool resync(parser_T* parser, TokenType tokens[], int count);
 
 #endif

@@ -1,6 +1,7 @@
 #include "include/semantic.h"
 
 
+extern LLVMContextRef llvm_context;
 extern LLVMBuilderRef llvm_builder;
 extern LLVMModuleRef llvm_module;
 extern LLVMValueRef main_func;
@@ -247,23 +248,6 @@ TokenType check_for_reserved_word(Semantic* sem, char* str)
     return T_ID;
 }
 
-LLVMTypeRef create_llvm_type(TypeClass entry_type) {
-	LLVMTypeRef type;
-	switch (entry_type) {
-		case TC_INT:
-            type = LLVMInt32Type(); break;
-		case TC_FLOAT:
-			type = LLVMFloatType(); break;
-		case TC_STRING:
-			type = LLVMPointerType(LLVMInt8Type(), 0); break;
-		case TC_BOOL:
-			type = LLVMInt1Type(); break;
-		default:
-			type = LLVMVoidType(); break;
-	}
-	return type;
-}
-
 void insert_runtime_functions(Semantic* sem)
 {
     Symbol s;
@@ -274,7 +258,7 @@ void insert_runtime_functions(Semantic* sem)
 
     str = "getbool";
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMInt1Type(), NULL, 0, false);
+    ft = LLVMFunctionType(LLVMInt1TypeInContext(llvm_context), NULL, 0, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
@@ -282,7 +266,7 @@ void insert_runtime_functions(Semantic* sem)
 
     str = "getinteger";
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMInt32Type(), NULL, 0, false);
+    ft = LLVMFunctionType(LLVMInt32TypeInContext(llvm_context), NULL, 0, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
@@ -290,7 +274,7 @@ void insert_runtime_functions(Semantic* sem)
 
     str = "getfloat";
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMFloatType(), NULL, 0, false);
+    ft = LLVMFunctionType(LLVMFloatTypeInContext(llvm_context), NULL, 0, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
@@ -298,61 +282,61 @@ void insert_runtime_functions(Semantic* sem)
 
     str = "getstring";
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMPointerType(LLVMInt8Type(), 0), NULL, 0, false);
-    func = LLVMAddFunction(llvm_module, str, ft);
-    LLVMSetLinkage(func, LLVMExternalLinkage);
-    s.llvm_function = func;
-    update_symbol(sem->global, str, s);
-
-    str = "_outOfBoundsError";
-    s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMVoidType(), NULL, 0, false);
+    ft = LLVMFunctionType(LLVMPointerType(LLVMInt8TypeInContext(llvm_context), 0), NULL, 0, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putbool";
-    params[0] = LLVMInt1Type();
+    params[0] = LLVMInt1TypeInContext(llvm_context);
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMInt1Type(), params, 1, false);
+    ft = LLVMFunctionType(LLVMInt1TypeInContext(llvm_context), params, 1, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putinteger";
-    params[0] = LLVMInt32Type();
+    params[0] = LLVMInt32TypeInContext(llvm_context);
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMInt32Type(), params, 1, false);
+    ft = LLVMFunctionType(LLVMInt1TypeInContext(llvm_context), params, 1, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putfloat";
-    params[0] = LLVMFloatType();
+    params[0] = LLVMFloatTypeInContext(llvm_context);
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMFloatType(), params, 1, false);
+    ft = LLVMFunctionType(LLVMInt1TypeInContext(llvm_context), params, 1, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putstring";
-    params[0] = LLVMPointerType(LLVMInt8Type(), 0);
+    params[0] = LLVMPointerType(LLVMInt8TypeInContext(llvm_context), 0);
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMPointerType(LLVMInt8Type(), 0), params, 1, false);
+    ft = LLVMFunctionType(LLVMInt1TypeInContext(llvm_context), params, 1, false);
     func = LLVMAddFunction(llvm_module, str, ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "sqrt";
-    params[0] = LLVMInt32Type();
+    params[0] = LLVMInt32TypeInContext(llvm_context);
     s = get_symbol(sem->global, str);
-    ft = LLVMFunctionType(LLVMInt32Type(), params, 1, false);
-    func = LLVMAddFunction(llvm_module, str, ft);
+    ft = LLVMFunctionType(LLVMFloatTypeInContext(llvm_context), params, 1, false);
+    func = LLVMAddFunction(llvm_module, "_sqrt", ft);
+    LLVMSetLinkage(func, LLVMExternalLinkage);
+    s.llvm_function = func;
+    update_symbol(sem->global, str, s);
+
+    str = "_outOfBoundsError";
+    s = get_symbol(sem->global, str);
+    ft = LLVMFunctionType(LLVMVoidTypeInContext(llvm_context), NULL, 0, false);
+    func = LLVMAddFunction(llvm_module, "outOfBoundsError", ft);
     LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
