@@ -257,60 +257,70 @@ void insert_runtime_functions(Semantic* sem)
     str = "getbool";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "getbool");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "getinteger";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "getinteger");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "getfloat";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "getfloat");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
     
     str = "getstring";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "getstring");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putbool";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "putbool");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putinteger";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "putinteger");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putfloat";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "putfloat");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "putstring";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "putstring");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "sqrt";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "_sqrt");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 
     str = "_outOfBoundsError";
     s = get_symbol(sem->global, str);
     func = LLVMGetNamedFunction(llvm_module, "outOfBoundsError");
+    LLVMSetLinkage(func, LLVMExternalLinkage);
     s.llvm_function = func;
     update_symbol(sem->global, str, s);
 }
