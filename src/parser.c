@@ -148,8 +148,15 @@ bool output_bitcode(parser_T* parser)
 
     debug_parser_statement("\nStart parsing....\n", parser->flag);
     bool status = parse(parser);
-
-    debug_parser_statement(concatf("Parse result is: %s\n", status ? "true" : "false"), parser->flag);
+    if (!status)
+    {
+        printf("Failed to parse the program. Exiting...\n");
+        // Cleanup
+        LLVMDisposeBuilder(llvm_builder);
+        LLVMDisposeModule(llvm_module);
+        LLVMContextDispose(llvm_context);
+        exit(1);
+    }
 
     if (parser->jit_flag)
     {
@@ -183,7 +190,7 @@ bool output_bitcode(parser_T* parser)
     }
 
     // Write out bitcode to file
-    if (LLVMWriteBitcodeToFile(llvm_module, "result.bc") != 0) {
+    if (LLVMWriteBitcodeToFile(llvm_module, "dist/result.bc") != 0) {
         fprintf(stderr, "error writing bitcode to file, skipping\n");
     }
 
@@ -195,11 +202,11 @@ bool output_bitcode(parser_T* parser)
     }
 
     // Dump module
-    fprintf(stderr, "\n--- Module ---\n");
+    // fprintf(stderr, "\n--- Module ---\n");
 
-    LLVMDumpModule(llvm_module);
+    // LLVMDumpModule(llvm_module);
 
-    fprintf(stderr, "--------------\n");
+    // fprintf(stderr, "--------------\n");
 
     // Cleanup
     LLVMDisposeBuilder(llvm_builder);
@@ -239,7 +246,13 @@ bool program(parser_T* parser)
         return false;
     }
     
-    parser_eat(parser, T_EOF);
+    // Period denotes end of file, is a must for the program to function
+    // in this case.
+    if (!parser_eat(parser, T_EOF))
+    {
+        throw_error("Missing period at the end of program.\n", parser->look_ahead);
+        return false;
+    }
 
     if (parser->table_flag)
     {
