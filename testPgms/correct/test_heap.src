@@ -1,6 +1,6 @@
 program test_program is
-    global variable tmp : integer;
-    procedure print_string : integer(variable level : integer)
+    global variable tmp : bool;
+    procedure print_string : bool(variable level : integer)
         variable s : string;
         variable x : bool;
     begin
